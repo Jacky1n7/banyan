@@ -19,3 +19,25 @@
 - 站点 `platform` 必须填 `anyrouter`（agentrouter 也填它，adapter 按 URL 分辨）
 - 账号必须有 `platformUserId`，否则 `/api/user/self` 一律 401「未提供 New-Api-User」
 - 存量 WAF cookie 不能复用，必须每次由浏览器现拿（见 `WAF_COOKIE_NAMES`）
+
+## Telegram 机器人
+
+`telegram_bot.py` + `tg_fmt.py` + `run_tgbot.sh`（systemd 单元 `tgbot.service`）。
+
+**为什么不用 metapi 自带的通知**：它只在失败时 `sendNotification`（checkinService
+里只有 error/warning 两处），签到成功一声不响；而且没有接收侧，无法反向操作。
+所以 bot 接管全部 Telegram 交互，metapi 的 `TELEGRAM_ENABLED` 必须设为 `false`，
+否则一条事件会被推两次。
+
+- **推送**：轮询 `events` 表（metapi 每次签到都会写），用 `last_event_id` 记位点 ——
+  比时间窗口可靠，重启不漏推不重推；首次启动从当前最大 id 开始，不补推历史。
+  `reward` 在 `checkin_logs` 里而 `events` 里没有，会补查后拼进消息。
+- **命令**：长轮询 `getUpdates`，操作转成 metapi 的 REST 调用。
+
+**安全**：只响应白名单 `chat_id`，其它静默忽略（不回复，避免被探测出是 bot）；
+含密码/session 的用户消息**先删除再执行耗时操作**（否则密码会在聊天记录里停留
+一两分钟）；删除账号走 inline keyboard 二次确认。
+
+状态灯统一约定：🟢 正常 / 🟡 需注意 / 🔴 要处理 / ⚪ 主动禁用。
+账号灯的判断顺序是有意的 —— 先看是否被禁用，再看硬故障（缺 api_user / 无凭据），
+最后才看「久未签到」这类软信号，否则禁用的账号会被误报成红灯。
