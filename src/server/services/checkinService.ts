@@ -316,6 +316,22 @@ export async function checkinAccount(accountId: number, options?: { skipEvent?: 
         'error',
       );
     }
+  } else if (Number(logReward) > 0) {
+    // 上游只在失败时通知，签到成功一声不响。但签到成功、额度到账才是最该知道的事，
+    // 所以这里补一条。
+    //
+    // 只在真拿到奖励（logReward > 0）时推：这些站是滚动 24h 才能签一次，而调度是
+    // 每 6 小时跑一轮，四轮里通常只有一轮真签上，其余都是「今日已签到、余额无变化」。
+    // 无条件推成功会变成每天四条噪音，反而让人忽略真正的失败告警。
+    const balanceSuffix =
+      typeof refreshedBalanceInfo?.balance === 'number'
+        ? `（当前余额 $${refreshedBalanceInfo.balance.toFixed(2)}）`
+        : '';
+    await sendNotification(
+      'checkin success',
+      `${account.username || 'ID:' + accountId} @ ${site.name}: ${logMessage}${balanceSuffix}`,
+      'info',
+    );
   }
 
 
