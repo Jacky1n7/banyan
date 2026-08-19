@@ -12,7 +12,7 @@ import { runWithSiteApiEndpointPool } from './siteApiEndpointService.js';
 import { type AccountCreatePayload } from '../contracts/accountsRoutePayloads.js';
 import { convergeAccountMutation } from './accountMutationWorkflow.js';
 
-const ACCOUNT_VERIFY_TIMEOUT_MS = 10_000;
+const ACCOUNT_VERIFY_TIMEOUT_MS = 240_000; // 浏览器能力后端要起真浏览器过 WAF 挑战，10 秒必然超时
 
 type AccountInitializationParams = {
   accountId: number;

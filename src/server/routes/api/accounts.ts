@@ -234,8 +234,8 @@ type LoginFailureInfo = {
   shieldBlocked: boolean;
 };
 
-const ACCOUNT_HEALTH_REFRESH_TIMEOUT_MS = 10_000;
-const ACCOUNT_VERIFY_TIMEOUT_MS = 10_000;
+const ACCOUNT_HEALTH_REFRESH_TIMEOUT_MS = 240_000; // 同上
+const ACCOUNT_VERIFY_TIMEOUT_MS = 240_000; // 浏览器能力后端要起真浏览器过 WAF 挑战，10 秒必然超时
 const ACCOUNT_VERIFY_DIAG_TIMEOUT_MS = 2_500;
 
 function normalizeLoginFailure(
@@ -535,7 +535,10 @@ export async function accountsRoutes(app: FastifyInstance) {
         };
       }
 
-      const guessedPlatformUserId = guessPlatformUserIdFromUsername(username);
+      // 登录时真浏览器从 /api/user/self 读到的 ID 才准；
+      // guessPlatformUserIdFromUsername 只是从用户名末尾抓数字的兜底猜测。
+      const guessedPlatformUserId =
+        loginResult.platformUserId || guessPlatformUserIdFromUsername(username);
 
       // Auto-fetch API token(s)
       let apiToken: string | null = null;

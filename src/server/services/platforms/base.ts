@@ -42,6 +42,14 @@ interface LoginResult {
   accessToken?: string;
   username?: string;
   message?: string;
+  /**
+   * 站点侧的用户 ID（New-Api-User 请求头的值）。
+   * 原先 metapi 只靠 guessPlatformUserIdFromUsername() 从用户名末尾抓数字，
+   * 用户名不以 ID 结尾时（如 user@example.com）就拿不到，导致后续
+   * /api/user/self 一律 401「未提供 New-Api-User」、余额恒为 0。
+   * 改造后的 AnyRouterAdapter 登录时会真浏览器读到它，从这里带回来。
+   */
+  platformUserId?: number;
 }
 
 export interface UserInfo {

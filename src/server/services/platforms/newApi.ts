@@ -946,7 +946,13 @@ export class NewApiAdapter extends BasePlatformAdapter {
     baseUrl: string,
     username: string,
     password: string,
-  ): Promise<{ success: boolean; accessToken?: string; username?: string; message?: string }> {
+  ): Promise<{
+    success: boolean;
+    accessToken?: string;
+    username?: string;
+    message?: string;
+    platformUserId?: number;
+  }> {
     try {
       const { data: res, cookieHeader } = await this.fetchJsonRawWithCookie<any>(`${baseUrl}/api/user/login`, {
         method: 'POST',

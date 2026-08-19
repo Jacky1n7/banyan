@@ -224,9 +224,16 @@ async function tryAutoRelogin(account: any, site: any): Promise<string | null> {
   );
   if (!loginResult.success || !loginResult.accessToken) return null;
 
+  // 自动重登拿到的真实用户 ID 也要落库，否则下次 /api/user/self 仍会
+  // 401「未提供 New-Api-User」—— 那正是余额恒为 0、session 被误判失效的原因。
+  const reloginExtraConfig = loginResult.platformUserId
+    ? mergeAccountExtraConfig(account.extraConfig, { platformUserId: loginResult.platformUserId })
+    : undefined;
+
   await db.update(schema.accounts)
     .set({
       accessToken: loginResult.accessToken,
+      ...(reloginExtraConfig ? { extraConfig: reloginExtraConfig } : {}),
       status: account.status === 'expired' ? 'active' : account.status,
       updatedAt: new Date().toISOString(),
     })

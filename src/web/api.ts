@@ -292,6 +292,13 @@ export type ProxyTestRequestEnvelope = {
   multipartFiles?: ProxyTestMultipartFile[];
 };
 
+// 这些操作会经 AnyRouterAdapter 转发到本机的浏览器能力后端：起真浏览器、解掉
+// aliyun_waf_aa/bb 的 JS 挑战、跳转 /console 再请求接口，单次 12-60 秒是常态。
+// request() 默认 30s 会在请求还没跑完时就 abort，表现就是「绑定账号超时」。
+const BROWSER_OP_TIMEOUT_MS = 240_000;
+// 批量操作（全部账号签到）串行跑多个账号，再放宽一档
+const BROWSER_BATCH_TIMEOUT_MS = 600_000;
+
 const DEFAULT_PROXY_TEST_TIMEOUT_MS = 30_000;
 const LONG_RUNNING_PROXY_TEST_TIMEOUT_MS = 150_000;
 
@@ -807,7 +814,11 @@ export const api = {
       sites: any[];
     }>,
   addAccount: (data: any) =>
-    request("/api/accounts", { method: "POST", body: JSON.stringify(data) }),
+    request("/api/accounts", {
+      method: "POST",
+      body: JSON.stringify(data),
+      timeoutMs: BROWSER_OP_TIMEOUT_MS,
+    }),
   loginAccount: (data: {
     siteId: number;
     username: string;
@@ -816,6 +827,7 @@ export const api = {
     request("/api/accounts/login", {
       method: "POST",
       body: JSON.stringify(data),
+      timeoutMs: BROWSER_OP_TIMEOUT_MS,
     }),
   verifyToken: (data: {
     siteId: number;
@@ -826,6 +838,7 @@ export const api = {
     request("/api/accounts/verify-token", {
       method: "POST",
       body: JSON.stringify(data),
+      timeoutMs: BROWSER_OP_TIMEOUT_MS,
     }),
   rebindAccountSession: (
     id: number,
@@ -839,6 +852,7 @@ export const api = {
     request(`/api/accounts/${id}/rebind-session`, {
       method: "POST",
       body: JSON.stringify(data),
+      timeoutMs: BROWSER_OP_TIMEOUT_MS,
     }),
   updateAccount: (id: number, data: any) =>
     request(`/api/accounts/${id}`, {
@@ -906,9 +920,16 @@ export const api = {
     }),
 
   // Check-in
-  triggerCheckinAll: () => request("/api/checkin/trigger", { method: "POST" }),
+  triggerCheckinAll: () =>
+    request("/api/checkin/trigger", {
+      method: "POST",
+      timeoutMs: BROWSER_BATCH_TIMEOUT_MS,
+    }),
   triggerCheckin: (id: number) =>
-    request(`/api/checkin/trigger/${id}`, { method: "POST" }),
+    request(`/api/checkin/trigger/${id}`, {
+      method: "POST",
+      timeoutMs: BROWSER_OP_TIMEOUT_MS,
+    }),
   getCheckinLogs: (params?: string) =>
     request(`/api/checkin/logs${params ? "?" + params : ""}`),
   updateCheckinSchedule: (cron: string) =>
