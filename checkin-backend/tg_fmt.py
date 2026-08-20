@@ -95,6 +95,8 @@ def account_lamp(acct: dict) -> str:
 		return '🔴'
 	if not acct.get('has_password') and not acct.get('has_session'):
 		return '🔴'
+	# 这里的 last_checkin 已由调用方替换成 checkin_logs 里真实的最近成功时间，
+	# 不是 metapi 的 accounts.last_checkin_at（那个在 interval 调度下不推进）
 	last = acct.get('last_checkin')
 	if last:
 		try:

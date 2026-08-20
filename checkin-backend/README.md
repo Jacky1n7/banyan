@@ -59,3 +59,19 @@ delay 正常但目标站 EOF 的情况 —— 必须直接请求目标站才算�
 不算节点故障（连得上，只是被拦，属另一类问题）。
 
 切换成功/失败都会推 Telegram，不会默默处理。
+
+### 两个判据上的坑（已修）
+
+**不要用 `accounts.last_checkin_at` 判断「上次签到」。** metapi 只在
+`directCheckinSuccess`（真拿到奖励）时才推进它；interval 调度下「今日已签到」
+不推进（`checkinService.ts` 的 `shouldAdvanceLastCheckinAt`）。而 agentrouter 的
+`sign_in_path` 是 `None`、查用户信息即完成签到，返回 message 总命中「今日已签到」
+—— 于是它的 `last_checkin_at` 长期为 `None`，拿它判灯会**永久误报黄灯**。
+正确判据是 `checkin_logs` 里 `status=success` 的最近时间。
+
+**退避状态要两道检查。** `.login_cooldown.json` 是独立签到方案的机制，签到交给
+metapi 后那套已 disabled，文件变成不再被更新也不被清除的遗物。所以必须：
+先看 `anyrouter-checkin.timer` 是否 `enabled`（机制在不在跑），再按 1h/2h/4h…
+算是否**仍未到期** —— 只看 `failures > 0` 会把 40 小时前的记录一直报成「退避中」。
+
+误报比不报更糟：它会让人对告警脱敏，真出事时反而忽略。

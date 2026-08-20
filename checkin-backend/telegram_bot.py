@@ -149,7 +149,26 @@ def save_state(st: dict) -> None:
 # ------------------------------------------------------------------ 数据聚合
 
 
+def last_success_map() -> dict[int, str]:
+	"""每个账号最近一次**成功**签到的时间，取自 checkin_logs。
+
+	不能用 accounts.last_checkin_at 当判据：metapi 只在 directCheckinSuccess
+	（真拿到奖励）时才推进它，而 interval 调度下「今日已签到」不推进
+	（checkinService.ts 的 shouldAdvanceLastCheckinAt）。agentrouter 的
+	sign_in_path 是 None，查用户信息即完成签到，返回的 message 总是命中
+	「今日已签到」—— 于是它的 last_checkin_at 长期为 None，拿它判灯会一直误报黄灯。
+	"""
+	out: dict[int, str] = {}
+	for row in db_rows(
+			'SELECT account_id, MAX(created_at) AS last FROM checkin_logs '
+			"WHERE status = 'success' GROUP BY account_id"):
+		if row.get('last'):
+			out[row['account_id']] = row['last']
+	return out
+
+
 def accounts_data() -> list[dict]:
+	succ = last_success_map()
 	out = []
 	for row in db_rows(
 			'SELECT a.id, a.username, a.status, a.balance, a.balance_used, '
@@ -168,7 +187,9 @@ def accounts_data() -> list[dict]:
 			'site_id': row['site_id'], 'status': row['status'],
 			'balance': row['balance'] or 0, 'used': row['balance_used'] or 0,
 			'checkin_enabled': row['checkin_enabled'],
-			'last_checkin': row['last_checkin_at'],
+			# 展示与判灯都用真实成功记录；metapi 自己的 last_checkin_at 另存一份备查
+			'last_checkin': succ.get(row['id']) or row['last_checkin_at'],
+			'metapi_last_checkin': row['last_checkin_at'],
 			'api_user': extra.get('platformUserId'),
 			'has_password': bool((extra.get('autoRelogin') or {}).get('passwordCipher')),
 			'has_session': 'session=' in (row['access_token'] or ''),
@@ -235,7 +256,24 @@ def schedule_data() -> dict:
 
 
 def cooldown_data() -> dict:
-	"""登录退避状态。独立签到方案留下的，仍能反映站点是否在限流我们。"""
+	"""登录退避状态。
+
+	这是独立签到方案（metapi_bridge.py + anyrouter-checkin.timer）的机制。
+	签到交给 metapi 后那套已停用，文件会变成不再被更新也不被清除的遗物 ——
+	所以两道检查缺一不可，否则会长期误报「退避中」：
+
+	1. timer 没启用就不看这个文件（机制本身没在运行）
+	2. 即使在运行，也要按 1h/2h/4h… 算出是否**仍未到期**，
+	   而不是只看 failures > 0
+	"""
+	try:
+		active = subprocess.run(['systemctl', 'is-enabled', 'anyrouter-checkin.timer'],
+								capture_output=True, text=True, timeout=10).stdout.strip()
+		if active != 'enabled':
+			return {}
+	except Exception:
+		return {}
+
 	f = CHECKIN_DIR / '.login_cooldown.json'
 	if not f.exists():
 		return {}
@@ -244,13 +282,17 @@ def cooldown_data() -> dict:
 	except Exception:
 		return {}
 	out = {}
+	now = time.time()
 	for prov, entry in (raw or {}).items():
 		if not isinstance(entry, dict):
 			continue
 		fails = int(entry.get('failures', 0))
-		if fails > 0:
-			wait = min(2 ** (fails - 1), 12)
-			out[prov] = f'连续 {fails} 次失败，退避 {wait}h'
+		if fails <= 0:
+			continue
+		wait_h = min(2 ** (fails - 1), 12)
+		elapsed_h = (now - float(entry.get('ts', 0))) / 3600
+		if elapsed_h < wait_h:
+			out[prov] = f'连续 {fails} 次失败，退避 {wait_h}h，还剩 {wait_h - elapsed_h:.1f}h'
 	return out
 
 
