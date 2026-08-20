@@ -682,6 +682,112 @@ def push_loop():
 		time.sleep(20)
 
 
+# ------------------------------------------------------------------ 代理看门狗
+
+
+PROXY_PROBE_TARGETS = ('https://anyrouter.top/login', 'https://agentrouter.org/login')
+WATCHDOG_INTERVAL = 300      # 5 分钟探一次
+WATCHDOG_THRESHOLD = 3       # 连续 3 次（约 15 分钟）失败才动手
+
+
+def probe_proxy() -> tuple[bool, str]:
+	"""经代理探目标站是否真的可达。
+
+	不用 mihomo 自带的 delay 接口 —— 它只测到 gstatic 的连通性，节点对目标站
+	是否可用要另说（实测出现过 delay 正常但目标站 EOF 的情况）。
+	"""
+	op = urllib.request.build_opener(urllib.request.ProxyHandler(
+		{'http': 'http://127.0.0.1:7890', 'https': 'http://127.0.0.1:7890'}))
+	try:
+		ip = op.open('https://api.ipify.org', timeout=20).read().decode().strip()
+	except Exception as exc:
+		return False, f'出口不通（{type(exc).__name__}）'
+	for url in PROXY_PROBE_TARGETS:
+		try:
+			op.open(urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'}), timeout=25)
+		except urllib.error.HTTPError:
+			pass   # 403/404 说明连得上，只是被拦，属于另一类问题，不归看门狗管
+		except Exception as exc:
+			return False, f'{url.split("/")[2]} 不通（{type(exc).__name__}）'
+	return True, ip
+
+
+def switch_node(name: str) -> bool:
+	req = urllib.request.Request(f'{MIHOMO_API}/proxies/PROXY',
+								 data=json.dumps({'name': name}).encode(), method='PUT',
+								 headers={'Content-Type': 'application/json'})
+	try:
+		urllib.request.urlopen(req, timeout=15)
+		return True
+	except Exception:
+		return False
+
+
+def find_working_node(exclude: str | None) -> tuple[str | None, str]:
+	"""逐个试，返回第一个目标站真正可达的节点。"""
+	info = proxy_data()
+	for name in info.get('all') or []:
+		if name == exclude:
+			continue
+		if not switch_node(name):
+			continue
+		time.sleep(2)
+		ok, detail = probe_proxy()
+		if ok:
+			return name, detail
+	return None, ''
+
+
+def proxy_watchdog():
+	"""看住代理节点。
+
+	proxy-group 用的是 select 固定节点 —— 因为 WAF cookie 和 session 绑出口 IP，
+	url-test/fallback 那种自动漂移会让已登录 session 失效。代价是节点真挂了
+	不会自动切：2026-08-20 美国-直连 EOF，连续两轮签到全军覆没才被发现。
+
+	所以这里补上兜底，但要求**连续多次**失败才动手 —— 网络抖动就切会让 IP
+	无谓漂移，那正是当初放弃 fallback 的原因。
+	"""
+	fails = 0
+	while True:
+		time.sleep(WATCHDOG_INTERVAL)
+		try:
+			ok, detail = probe_proxy()
+			if ok:
+				if fails:
+					print(f'[WATCHDOG] 代理恢复（{detail}），失败计数清零', flush=True)
+				fails = 0
+				continue
+
+			fails += 1
+			print(f'[WATCHDOG] 代理探测失败 {fails}/{WATCHDOG_THRESHOLD}: {detail}', flush=True)
+			if fails < WATCHDOG_THRESHOLD:
+				continue
+
+			current = (proxy_data() or {}).get('now')
+			send(OWNER, f'<b>🟡 代理节点异常</b>\n\n'
+						f'🔌 <code>{F.esc(current)}</code>\n'
+						f'⚠️ {F.esc(detail)}\n\n'
+						f'正在自动寻找可用节点…')
+			name, info = find_working_node(exclude=current)
+			if name:
+				send(OWNER, f'<b>✅ 已自动切换节点</b>\n\n'
+							f'🔌 <code>{F.esc(name)}</code>\n'
+							f'🌐 出口 <code>{F.esc(info)}</code>\n\n'
+							f'💡 换 IP 后首轮签到可能触发一次自动重登，属正常。')
+				print(f'[WATCHDOG] 已切换到 {name}（{info}）', flush=True)
+			else:
+				switch_node(current)   # 都不通就切回去，至少状态可预期
+				send(OWNER, f'<b>🔴 所有节点都不可用</b>\n\n'
+							f'已切回 <code>{F.esc(current)}</code>。\n'
+							f'可能是机场故障或订阅过期，需要人工处理。\n'
+							f'用 /proxy 查看节点列表。')
+				print('[WATCHDOG] 所有节点均不可用', flush=True)
+			fails = 0
+		except Exception:
+			traceback.print_exc()
+
+
 # ------------------------------------------------------------------ 主循环
 
 
@@ -742,6 +848,7 @@ def main() -> int:
 	register_commands()
 
 	threading.Thread(target=push_loop, daemon=True).start()
+	threading.Thread(target=proxy_watchdog, daemon=True).start()
 
 	state = load_state()
 	offset = state.get('update_offset', 0)
