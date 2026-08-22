@@ -6,6 +6,25 @@ export interface CheckinResult {
   success: boolean;
   message: string;
   reward?: string;
+  /**
+   * Set when the adapter had to log in again to complete the check-in (some
+   * sites hand out the daily quota on login and expose no check-in endpoint).
+   * Logging in invalidates the previous session, so the caller must persist
+   * this or the next round will run with a dead token.
+   */
+  newAccessToken?: string;
+  /** Site-side user id confirmed during that login. */
+  platformUserId?: number;
+}
+
+/**
+ * Credentials handed to `checkin()` for sites whose daily quota is granted at
+ * login time rather than through a check-in endpoint. Optional — adapters that
+ * have a real check-in endpoint ignore it.
+ */
+export interface CheckinCredentials {
+  username: string;
+  password: string;
 }
 
 export interface SubscriptionPlanSummary {
@@ -104,7 +123,8 @@ export interface PlatformAdapter {
   login(baseUrl: string, username: string, password: string): Promise<LoginResult>;
   getUserInfo(baseUrl: string, accessToken: string, platformUserId?: number): Promise<UserInfo | null>;
   verifyToken(baseUrl: string, token: string, platformUserId?: number): Promise<TokenVerifyResult>;
-  checkin(baseUrl: string, accessToken: string, platformUserId?: number): Promise<CheckinResult>;
+  checkin(baseUrl: string, accessToken: string, platformUserId?: number,
+    credentials?: CheckinCredentials): Promise<CheckinResult>;
   getBalance(baseUrl: string, accessToken: string, platformUserId?: number): Promise<BalanceInfo>;
   getModels(baseUrl: string, token: string, platformUserId?: number): Promise<string[]>;
   getApiToken(baseUrl: string, accessToken: string, platformUserId?: number): Promise<string | null>;

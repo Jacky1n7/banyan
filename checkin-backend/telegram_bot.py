@@ -25,6 +25,7 @@ from __future__ import annotations
 
 import html
 import json
+import re
 import os
 import sqlite3
 import subprocess
@@ -551,13 +552,139 @@ def cmd_help(chat_id, args, msg):
 	send(chat_id, F.HELP)
 
 
+# ------------------------------------------------------------------ 自动签到控制台
+
+
+def today_grants() -> dict:
+	"""今天每个账号真实领到的额度，按北京时间自然日取自 checkin_logs.reward。
+
+	用 reward 而不是 status：interval 调度下每轮每账号都写一条 success，但绝大多数
+	是「今日已签到」，只有真拿到额度那条才有 reward。
+	"""
+	out = {}
+	for r in db_rows(
+			'SELECT account_id, reward FROM checkin_logs '
+			'WHERE date(created_at, "+8 hours") = date("now", "+8 hours") '
+			'AND reward IS NOT NULL'):
+		try:
+			v = float(str(r['reward']).lstrip('$').strip())
+		except (TypeError, ValueError):
+			continue
+		if v > 0:
+			out[r['account_id']] = max(out.get(r['account_id'], 0), v)
+	return out
+
+
+def sched_config() -> dict:
+	"""读调度配置。优先问 API，拿不到再退回解析容器日志。"""
+	st, out = metapi('/api/checkin/schedule', timeout=20)
+	if st == 200 and isinstance(out, dict):
+		d = out.get('data') if isinstance(out.get('data'), dict) else out
+		if isinstance(d, dict) and d.get('mode'):
+			return d
+	raw = schedule_data().get('checkin') or ''
+	m = re.search(r'(\d+)\s*h', raw)
+	return {'mode': 'interval' if 'interval' in raw else 'cron',
+			'intervalHours': int(m.group(1)) if m else None}
+
+
+def auto_panel_text() -> str:
+	ip = None
+	try:
+		ok, ip = probe_proxy()
+		if not ok:
+			ip = None
+	except Exception:
+		pass
+	return F.fmt_auto_panel(sched_config(), accounts_data(), today_grants(), ip)
+
+
+def auto_keyboard() -> list:
+	accts = accounts_data()
+	on = sum(1 for a in accts if a.get('checkin_enabled'))
+	hours = sched_config().get('intervalHours') or '?'
+	all_on = bool(accts) and on == len(accts)
+	return [
+		[{'text': '▶️ 立即全部签到', 'callback_data': 'auto:run:all'},
+		 {'text': '🔄 刷新', 'callback_data': 'auto:view:0'}],
+		[{'text': f'⏱ 间隔 {hours}h', 'callback_data': 'auto:ivmenu:0'},
+		 {'text': f'🔀 账号开关 {on}/{len(accts)}', 'callback_data': 'auto:acctmenu:0'}],
+		[{'text': ('⏸ 全部停用' if all_on else '▶️ 全部启用'),
+		  'callback_data': f'auto:toggleall:{0 if all_on else 1}'}],
+	]
+
+
+def interval_keyboard() -> list:
+	cur = sched_config().get('intervalHours')
+	rows, row = [], []
+	for h in (1, 2, 3, 4, 6, 8, 12, 24):
+		row.append({'text': f'{"✅ " if h == cur else ""}{h}h',
+					'callback_data': f'auto:setiv:{h}'})
+		if len(row) == 4:
+			rows.append(row)
+			row = []
+	if row:
+		rows.append(row)
+	rows.append([{'text': '← 返回', 'callback_data': 'auto:view:0'}])
+	return rows
+
+
+def acct_keyboard() -> list:
+	rows = []
+	for a in accounts_data():
+		on = bool(a.get('checkin_enabled'))
+		label = '🟢 开' if on else '⚪ 关'
+		rows.append([{'text': f'{label}  #{a["id"]}  {F.mask_user(a.get("username"))}',
+					  'callback_data': f'auto:acct:{a["id"]}'}])
+	rows.append([{'text': '← 返回', 'callback_data': 'auto:view:0'}])
+	return rows
+
+
+ACCT_MENU_TIP = ('<b>🔀 逐个账号开关</b>' + chr(10) * 2
+				 + '点一下切换。关掉的账号不参与任何自动签到轮次，也不计入今日统计。')
+
+IV_MENU_TIP = ('<b>⏱ 选择签到间隔</b>' + chr(10) * 2
+			   + '这些站是滚动 24h 才能签一次，间隔小只是为了容错重试，'
+			   + '不会因为跑得勤就多拿额度。' + chr(10)
+			   + 'agentrouter 走登录领取，同一天内只会真正登录一次。')
+
+
+def cmd_auto(chat_id, args, msg):
+	send(chat_id, auto_panel_text(), keyboard=auto_keyboard())
+
+
+def set_checkin_enabled(aid: int, enabled: bool) -> int:
+	st, _ = metapi(f'/api/accounts/{aid}', {'checkinEnabled': enabled}, method='PUT')
+	return st
+
+
+def run_all_checkin_async(chat_id, mid):
+	"""后台线程跑批量签到。
+
+	单账号 15-90 秒，四个账号可能好几分钟 —— on_message/on_callback 是在主循环里
+	同步调用的，放在那里会让 bot 整段时间不响应任何命令。
+	"""
+	def worker():
+		try:
+			metapi('/api/checkin/trigger', {}, timeout=900)
+			metapi('/api/accounts?refresh=1', timeout=180)
+			edit(chat_id, mid, auto_panel_text(), keyboard=auto_keyboard())
+		except Exception:
+			traceback.print_exc()
+			try:
+				edit(chat_id, mid, '🔴 批量签到执行出错，看 /logs', keyboard=auto_keyboard())
+			except Exception:
+				pass
+	threading.Thread(target=worker, daemon=True).start()
+
+
 COMMANDS = {
 	'start': cmd_help, 'help': cmd_help,
 	'status': cmd_status, 'accounts': cmd_accounts, 'logs': cmd_logs,
 	'sites': cmd_sites, 'services': cmd_services, 'proxy': cmd_proxy,
 	'checkin': cmd_checkin, 'refresh': cmd_refresh,
 	'enable': cmd_toggle(True), 'disable': cmd_toggle(False),
-	'schedule': cmd_schedule, 'del': cmd_del, 'add': cmd_add,
+	'schedule': cmd_schedule, 'auto': cmd_auto, 'del': cmd_del, 'add': cmd_add,
 }
 
 
@@ -575,6 +702,39 @@ def on_callback(cb: dict):
 	if len(parts) < 3:
 		return
 	kind, action, value = parts[0], parts[1], parts[2]
+
+	if kind == 'auto':
+		if action == 'view':
+			edit(chat_id, mid, auto_panel_text(), keyboard=auto_keyboard())
+		elif action == 'ivmenu':
+			edit(chat_id, mid, IV_MENU_TIP, keyboard=interval_keyboard())
+		elif action == 'setiv':
+			st, _ = metapi('/api/checkin/schedule',
+							   {'mode': 'interval', 'intervalHours': max(1, min(24, int(value)))},
+							   method='PUT')
+			note = f'✅ 间隔已改为 {value}h' if st == 200 else f'🔴 设置失败 HTTP {st}'
+			edit(chat_id, mid, auto_panel_text() + chr(10) * 2 + note,
+				 keyboard=auto_keyboard())
+		elif action == 'acctmenu':
+			edit(chat_id, mid, ACCT_MENU_TIP, keyboard=acct_keyboard())
+		elif action == 'acct':
+			aid = int(value)
+			cur = next((a for a in accounts_data() if a['id'] == aid), None)
+			if cur:
+				set_checkin_enabled(aid, not bool(cur.get('checkin_enabled')))
+			edit(chat_id, mid, ACCT_MENU_TIP, keyboard=acct_keyboard())
+		elif action == 'toggleall':
+			want = value == '1'
+			for a in accounts_data():
+				if bool(a.get('checkin_enabled')) != want:
+					set_checkin_enabled(a['id'], want)
+			edit(chat_id, mid, auto_panel_text(), keyboard=auto_keyboard())
+		elif action == 'run':
+			edit(chat_id, mid, '🚀 正在为所有已启用账号签到…' + chr(10) * 2
+				 + '走真浏览器过 WAF，每个约 15-90 秒。完成后这条消息会自动刷新成最新面板。',
+				 keyboard=[])
+			run_all_checkin_async(chat_id, mid)
+		return
 
 	if kind == 'del':
 		if action != 'yes':
@@ -771,10 +931,11 @@ def push_loop():
 			logs = checkin_log_events(last_log)
 			if logs:
 				amap = {a['id']: a for a in accounts_data()}
+				grants = today_grants()
 				for ev in logs:
 					if worth_pushing(ev):
 						if not send_checked(
-								OWNER, F.fmt_checkin_event(ev, amap.get(ev['related_id'])),
+								OWNER, F.fmt_checkin_event(ev, amap.get(ev['related_id']), grants),
 								silent=(ev['level'] == 'info')):
 							break          # 临时故障，本条留到下轮重发
 						time.sleep(0.4)   # 避免触发 Telegram 限流
@@ -936,6 +1097,7 @@ def on_message(msg: dict):
 def register_commands():
 	"""注册命令菜单，Telegram 客户端里输入 / 会有提示。"""
 	tg('setMyCommands', commands=[
+		{'command': 'auto', 'description': '自动签到控制台'},
 		{'command': 'status', 'description': '系统总览'},
 		{'command': 'accounts', 'description': '账号列表'},
 		{'command': 'checkin', 'description': '签到（可加账号 id）'},

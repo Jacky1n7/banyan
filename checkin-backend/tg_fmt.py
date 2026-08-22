@@ -58,6 +58,13 @@ def to_cst(ts: str | None) -> str:
 		return raw[:16]
 
 
+def now_cst() -> str:
+	"""当前北京时间。to_cst(None) 是给「解析不出时间戳」用的，返回破折号，
+	不能拿来当「现在」—— 面板底部的时间戳一度显示成了 —。
+	"""
+	return (datetime.now(timezone.utc) + timedelta(hours=8)).strftime('%m-%d %H:%M')
+
+
 def ago(ts: str | None) -> str:
 	"""距今多久，让「上次签到」一眼能判断是否卡住。"""
 	if not ts:
@@ -135,32 +142,60 @@ def bar(used: float, total: float, width: int = 10) -> str:
 	return '▓' * filled + '░' * (width - filled) + f' {ratio * 100:.0f}%'
 
 
-def fmt_checkin_event(ev: dict, acct: dict | None) -> str:
-	"""签到事件推送。这是最高频的通知，信息密度要够但不能啰嗦。"""
+def fmt_checkin_event(ev: dict, acct: dict | None, grants: dict | None = None) -> str:
+	"""签到结果推送。
+
+	这是最高频的通知，所以第一行就要能回答「拿到了没、拿了多少」—— 其余是上下文。
+	带上今日累计是因为单看一条不知道整体进度：四个账号分散在一天里各自到账，
+	只有累计数字能说明「今天是否都齐了」。
+	"""
 	success = ev.get('level') != 'error'
 	title = ev.get('title') or ''
 	skipped = 'skipped' in title
-	head = '✅ 签到成功' if (success and not skipped) else ('⏭ 签到跳过' if skipped else '🔴 签到失败')
+	raw_reward = str(ev.get('reward') or '').lstrip('$').strip()
+	try:
+		reward = float(raw_reward) if raw_reward else 0.0
+	except ValueError:
+		reward = 0.0
+
+	if not success:
+		head = '🔴 签到失败'
+	elif reward > 0:
+		head = f'✅ 签到成功  <b>+{money(reward)}</b>'
+	elif skipped:
+		head = '⏭ 签到跳过'
+	else:
+		head = '✅ 已签到'
 
 	lines = [f'<b>{head}</b>', '']
 	if acct:
-		lines.append(f'👤 <code>{esc(mask_user(acct.get("username")))}</code>')
-		lines.append(f'🌐 {esc(acct.get("site"))}')
+		lines.append(f'👤 <code>{esc(mask_user(acct.get("username")))}</code>'
+					 f'   <i>{esc(acct.get("site"))}</i>')
 		bal, used = acct.get('balance') or 0, acct.get('used') or 0
-		reward = ev.get('reward')
-		gain = f'  <b>+{money(reward)}</b>' if reward else ''
-		lines.append(f'💰 余额 <b>{money(bal)}</b>{gain}')
-		lines.append(f'📊 已用 {money(used)} / 总额 {money(bal + used)}')
-		lines.append(f'    <code>{bar(used, bal + used)}</code>')
+		total = bal + used
+		lines.append('')
+		lines.append(f'💰 余额 <b>{money(bal)}</b>   已用 {money(used)}')
+		lines.append(f'📊 <code>{bar(used, total, 12)}</code>  总额 {money(total)}')
+
 	msg = ev.get('message') or ''
 	if msg:
-		# metapi 的 message 形如 "user @ site: 详情"，前半段已在上面展示过
+		# metapi 的 message 形如 "user @ site: 详情"，前半段上面已经展示过
 		detail = msg.split(':', 1)[1].strip() if ':' in msg else msg
-		if detail:
-			lines.append(f'{"📝" if success else "⚠️"} {esc(detail)[:160]}')
+		# 奖励金额已经在标题里了，正文里再说一遍是冗余
+		if detail and not (reward > 0 and '获得' in detail):
+			lines.append('')
+			lines.append(f'{"📝" if success else "⚠️"} {esc(detail)[:170]}')
+
+	if grants:
+		total_today = sum(v for v in grants.values() if v)
+		if total_today > 0:
+			lines.append('')
+			lines.append(f'💵 今日累计 <b>{money(total_today)}</b>'
+						 f'   ({len(grants)} 个账号已领)')
+
 	lines.append('')
 	lines.append(f'🕐 {to_cst(ev.get("created_at"))}')
-	return '\n'.join(lines)
+	return chr(10).join(lines)
 
 
 def fmt_generic_event(ev: dict) -> str:
@@ -171,6 +206,59 @@ def fmt_generic_event(ev: dict) -> str:
 		lines.append('')
 	lines.append(f'🕐 {to_cst(ev.get("created_at"))}')
 	return '\n'.join(lines)
+
+
+def fmt_auto_panel(sched: dict, accounts: list[dict], grants: dict,
+				   proxy: str | None = None) -> str:
+	"""自动签到控制台。
+
+	这是最常看的一屏，所以把「今天到手多少」放在最上面 —— 其余都是为了解释它。
+	"""
+	mode = sched.get('mode') or 'interval'
+	hours = sched.get('intervalHours')
+	on = [a for a in accounts if a.get('checkin_enabled') and a.get('status') == 'active']
+	got = [a for a in on if grants.get(a['id'])]
+	income = sum(grants.get(a['id'], 0) for a in on)
+
+	lamp = '🟢' if on else '⚪'
+	sched_txt = f'每 {hours}h' if mode == 'interval' and hours else esc(str(mode))
+
+	lines = [
+		'<b>🤖 自动签到</b>',
+		'',
+		f'💵 今日到手  <b>{money(income)}</b>   ({len(got)}/{len(on)} 个账号已领)',
+		f'{lamp} 调度      {sched_txt}   ·   {len(on)}/{len(accounts)} 个账号已启用',
+	]
+	if proxy:
+		lines.append(f'🌐 代理      <code>{esc(proxy)}</code>')
+	lines.append('')
+	lines.append('┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈')
+
+	for a in accounts:
+		enabled = bool(a.get('checkin_enabled')) and a.get('status') == 'active'
+		g = grants.get(a['id'])
+		if not enabled:
+			mark, note = '⚪', '已停用'
+		elif g:
+			mark, note = '✅', f'今日 <b>+{money(g)}</b>'
+		else:
+			mark, note = '⏳', '待领取'
+		bal, used = a.get('balance') or 0, a.get('used') or 0
+		lines.append(f'{mark} <code>#{a["id"]}</code> {esc(mask_user(a.get("username")))}'
+					 f'  <i>{esc(a.get("site"))}</i>')
+		lines.append(f'      {note}  ·  余 {money(bal)}  ·  <code>{bar(used, bal + used, 8)}</code>')
+
+	lines.append('┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈')
+	lines.append('')
+	nopwd = [a for a in on if not a.get('has_password')]
+	if nopwd:
+		lines.append(f'⚠️ {len(nopwd)} 个账号只有 session，过期后需人工重导：'
+					 + ', '.join(f'#{a["id"]}' for a in nopwd))
+	else:
+		lines.append('🔑 全部账号都有密码，session 过期可自动续期')
+	lines.append('')
+	lines.append(f'🕐 {now_cst()} (CST)')
+	return chr(10).join(lines)
 
 
 def fmt_status(data: dict) -> str:

@@ -1,5 +1,5 @@
 import { config } from '../../config.js';
-import type { BalanceInfo, CheckinResult, TokenVerifyResult, UserInfo } from './base.js';
+import type { BalanceInfo, CheckinResult, TokenVerifyResult, UserInfo, CheckinCredentials } from './base.js';
 import { NewApiAdapter } from './newApi.js';
 
 /**
@@ -142,12 +142,19 @@ export class AnyRouterAdapter extends NewApiAdapter {
     baseUrl: string,
     accessToken: string,
     platformUserId?: number,
+    credentials?: CheckinCredentials,
   ): Promise<CheckinResult> {
     try {
+      // agentrouter has no check-in endpoint at all — its daily quota is granted
+      // when you log in (verified: quota went from 45455841 to 57955841, +$25,
+      // after one full browser login). So the backend needs the credentials to
+      // do the check-in at all; sites with a real endpoint ignore them.
       return await extCall<CheckinResult>('checkin', {
         baseUrl,
         token: accessToken,
         platformUserId,
+        username: credentials?.username,
+        password: credentials?.password,
       });
     } catch (err) {
       return { success: false, message: (err as Error).message };

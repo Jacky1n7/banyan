@@ -186,16 +186,47 @@ export async function checkinAccount(accountId: number, options?: { skipEvent?: 
 
   const accountProxyUrl = resolveProxyUrlFromExtraConfig(account.extraConfig);
   let activeAccessToken = account.accessToken;
+
+  // Some sites (agentrouter) have no check-in endpoint — the daily quota is
+  // granted at login. For those, "checking in" means logging in again, so the
+  // adapter needs the credentials. Adapters with a real endpoint ignore them.
+  const checkinRelogin = getAutoReloginConfig(account.extraConfig);
+  const storedPassword = checkinRelogin
+    ? decryptAccountPassword(checkinRelogin.passwordCipher)
+    : null;
+  const checkinCredentials = checkinRelogin && storedPassword
+    ? { username: checkinRelogin.username, password: storedPassword }
+    : undefined;
+
   let result = await withAccountProxyOverride(accountProxyUrl,
-    () => adapter.checkin(site.url, activeAccessToken, platformUserId));
+    () => adapter.checkin(site.url, activeAccessToken, platformUserId, checkinCredentials));
 
   if (!result.success && shouldAttemptAutoRelogin(result.message)) {
     const refreshedAccessToken = await tryAutoRelogin(account, site);
     if (refreshedAccessToken) {
       activeAccessToken = refreshedAccessToken;
       result = await withAccountProxyOverride(accountProxyUrl,
-        () => adapter.checkin(site.url, activeAccessToken, platformUserId));
+        () => adapter.checkin(site.url, activeAccessToken, platformUserId, checkinCredentials));
     }
+  }
+
+  // A login-based check-in returns a fresh session — logging in invalidates the
+  // old one, so this has to be persisted or the next round runs with a dead
+  // token. Merge extraConfig rather than overwrite, or the stored autoRelogin
+  // credentials get wiped.
+  if (result.newAccessToken) {
+    const grantExtraConfig = result.platformUserId
+      ? mergeAccountExtraConfig(account.extraConfig, { platformUserId: result.platformUserId })
+      : undefined;
+    await db.update(schema.accounts)
+      .set({
+        accessToken: result.newAccessToken,
+        ...(grantExtraConfig ? { extraConfig: grantExtraConfig } : {}),
+        updatedAt: new Date().toISOString(),
+      })
+      .where(eq(schema.accounts.id, account.id))
+      .run();
+    activeAccessToken = result.newAccessToken;
   }
 
   const isCloudflare = isCloudflareChallenge(result.message);
