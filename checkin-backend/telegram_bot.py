@@ -7,7 +7,7 @@ metapi 自带的通知只在**失败**时发（checkinService 里只有 error/wa
 sendNotification），签到成功一声不响；而且它没有任何接收侧，没法在 Telegram 上
 反过来操作。所以这里接管全部 Telegram 交互：
 
-  * 推送：轮询 metapi 的 events 表（它每次签到都会写一条），格式化后发出。
+  * 推送：轮询 checkin_logs（签到结果）+ events（其余事件），格式化后发出。
     比让 metapi 自己发的好处是格式集中在一处，且能顺手把账号余额、额度条这些
     events 里没有的信息一起查出来拼进消息。
   * 命令：长轮询 getUpdates，把操作转成 metapi 的 REST 调用。
@@ -93,6 +93,31 @@ def send(chat_id, text: str, keyboard: list | None = None, silent: bool = False)
 	if keyboard:
 		params['reply_markup'] = {'inline_keyboard': keyboard}
 	return tg('sendMessage', **params)
+
+
+def send_checked(chat_id, text: str, **kw) -> bool:
+	"""发送并检查结果。返回 False 表示这条该留到下轮重发。
+
+	tg() 在任何失败下都只返回 {'ok': False, 'description': ...}，而 send() 的
+	调用方从不看返回值 —— 于是发送失败时游标照样推进，消息永久丢失且不留痕迹。
+	静默漏推比误报更难发现：看起来一切正常，只是什么都没收到。
+
+	400 是内容本身的问题（HTML 解析失败之类），重试多少次都一样，所以记下日志后
+	放行游标；否则整条队列会永久卡在这一条上，后面的全部推不出去。
+	"""
+	res = send(chat_id, text, **kw) or {}
+	if res.get('ok'):
+		return True
+	code, desc = res.get('error_code'), str(res.get('description') or '')
+	if code == 429:
+		wait = int((res.get('parameters') or {}).get('retry_after') or 5)
+		print(f'[PUSH] 被限流，等待 {wait}s 后重试', flush=True)
+		time.sleep(min(wait, 60))
+		return False
+	permanent = code == 400
+	print(f'[PUSH] 发送失败（{"内容问题，跳过该条" if permanent else "将重试"}）: '
+		  f'{code} {desc[:140]}', flush=True)
+	return permanent
 
 
 def edit(chat_id, message_id, text: str, keyboard: list | None = None):
@@ -684,41 +709,91 @@ def handle_cred_input(chat_id, text: str, msg: dict) -> bool:
 
 # ------------------------------------------------------------------ 推送循环
 
+def checkin_log_events(last_id: int) -> list[dict]:
+	"""把 checkin_logs 的新记录转成 events 的形状，复用同一套格式化。
+
+	为什么不能用 events 表当签到源：metapi 的 checkinAll() 对每个账号都传
+	skipEvent=true（checkinService.ts:357），而它自己不写汇总事件 —— 于是
+	**定时调度的签到一条 event 都不产生**。events 里那些 type=status 的
+	「全部账号签到已完成」只有在面板上手动点批量签到时，才由
+	backgroundTaskService 写。checkin_logs 才是无论走哪条路径都会写的权威记录。
+	"""
+	rows = db_rows('SELECT id, account_id, status, message, reward, created_at '
+				   'FROM checkin_logs WHERE id > ? ORDER BY id LIMIT 30', (last_id,))
+	return [{
+		'_log_id': r['id'],
+		'related_id': r['account_id'],
+		'level': 'info' if r['status'] == 'success' else 'error',
+		'title': f'checkin {r["status"]}',
+		'reward': r['reward'],
+		'message': r['message'],
+		'created_at': r['created_at'],
+	} for r in rows]
+
+
+def worth_pushing(ev: dict) -> bool:
+	"""噪音控制。
+
+	interval 6h 调度下每天产生 4 轮 × 账号数 条日志，绝大多数是
+	「余额无变化，今日已签到」—— 每条都推会让人对通知彻底脱敏。
+	只推真拿到额度的，以及任何失败/跳过。
+	"""
+	if ev.get('level') != 'info':
+		return True
+	try:
+		return float(str(ev.get('reward') or '').lstrip('$').strip() or 0) > 0
+	except ValueError:
+		return False
+
+
+
 
 def push_loop():
-	"""轮询 events 表推送。
+	"""推送循环。两个独立游标，各推各的，互不影响：
 
-	用 last_event_id 而不是时间窗口：重启或卡顿都不会漏推或重推。
-	首次启动时不补推历史，只从当前最大 id 开始，避免一上线就刷屏。
+	  * checkin_logs → 签到结果（权威记录，定时调度也有）
+	  * events       → 其余事件（余额异常、站点公告…），跳过 type=checkin 避免重复
+
+	用自增 id 而不是时间窗口：重启或卡顿都不会漏推或重推。首次启动不补推历史。
 	"""
 	state = load_state()
-	last = state.get('last_event_id')
-	if last is None:
+	if state.get('last_event_id') is None:
 		rows = db_rows('SELECT MAX(id) AS m FROM events')
-		last = (rows[0]['m'] if rows and rows[0]['m'] else 0)
-		state['last_event_id'] = last
-		save_state(state)
+		state['last_event_id'] = (rows[0]['m'] if rows and rows[0]['m'] else 0)
+	if state.get('last_checkin_log_id') is None:
+		rows = db_rows('SELECT MAX(id) AS m FROM checkin_logs')
+		state['last_checkin_log_id'] = (rows[0]['m'] if rows and rows[0]['m'] else 0)
+	save_state(state)
+	last, last_log = state['last_event_id'], state['last_checkin_log_id']
 
 	while True:
 		try:
+			logs = checkin_log_events(last_log)
+			if logs:
+				amap = {a['id']: a for a in accounts_data()}
+				for ev in logs:
+					if worth_pushing(ev):
+						if not send_checked(
+								OWNER, F.fmt_checkin_event(ev, amap.get(ev['related_id'])),
+								silent=(ev['level'] == 'info')):
+							break          # 临时故障，本条留到下轮重发
+						time.sleep(0.4)   # 避免触发 Telegram 限流
+					last_log = ev['_log_id']
+					state['last_checkin_log_id'] = last_log
+					save_state(state)
+
 			rows = db_rows('SELECT id, type, title, message, level, related_id, created_at '
 						   'FROM events WHERE id > ? ORDER BY id LIMIT 20', (last,))
-			if rows:
-				amap = {a['id']: a for a in accounts_data()}
-				# 签到事件的 reward 在 checkin_logs 里，events 里没有，补查一下
-				for ev in rows:
-					if ev['type'] == 'checkin':
-						lg = db_rows('SELECT reward FROM checkin_logs WHERE account_id = ? '
-									 'ORDER BY id DESC LIMIT 1', (ev.get('related_id'),))
-						ev['reward'] = lg[0]['reward'] if lg else None
-						text = F.fmt_checkin_event(ev, amap.get(ev.get('related_id')))
-					else:
-						text = F.fmt_generic_event(ev)
-					send(OWNER, text, silent=(ev.get('level') == 'info'))
-					last = ev['id']
-					state['last_event_id'] = last
-					save_state(state)
-					time.sleep(0.4)   # 避免触发 Telegram 限流
+			for ev in rows:
+				last = ev['id']
+				state['last_event_id'] = last
+				save_state(state)
+				if ev['type'] == 'checkin':
+					continue          # 已由 checkin_logs 覆盖
+				if not send_checked(OWNER, F.fmt_generic_event(ev),
+										silent=(ev.get('level') == 'info')):
+					continue
+				time.sleep(0.4)
 		except Exception:
 			traceback.print_exc()
 		time.sleep(20)

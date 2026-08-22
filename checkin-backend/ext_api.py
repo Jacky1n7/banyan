@@ -250,7 +250,18 @@ async def act_checkin(p: dict) -> dict:
 			reward = f'${delta}'
 	if not (after and after.get('success')):
 		return {'success': False, 'message': '签到请求已发出，但读不到用户信息（凭据可能失效）'}
-	msg = ('签到成功' + (f'，获得 {reward}' if reward else '（余额无变化，今日已签到）')) if ok else '签到失败'
+	# 文案要如实：sign_in_path is None 的站点（agentrouter）根本没有签到接口 ——
+	# 2026-08-22 实测 POST /api/user/sign_in、/check_in、/checkin 全部 404，余额分文未动。
+	# 上游对这类站点只查一次用户信息就 return True（checkin.py:463-466），
+	# 若照抄「今日已签到」会让人以为额度已领，实际它没有每日额度、余额只降不升。
+	if not ok:
+		msg = '签到失败'
+	elif reward:
+		msg = f'签到成功，获得 {reward}'
+	elif pc.sign_in_path is None:
+		msg = '余额已刷新（该站无签到机制，不发每日额度）'
+	else:
+		msg = '签到成功（余额无变化，今日已签到）'
 	out = {'success': bool(ok), 'message': msg}
 	if reward:
 		out['reward'] = reward
