@@ -26,6 +26,7 @@ from __future__ import annotations
 import html
 import json
 import re
+import socket
 import os
 import sqlite3
 import subprocess
@@ -963,6 +964,7 @@ def push_loop():
 # ------------------------------------------------------------------ 代理看门狗
 
 
+MIHOMO_CONFIG = Path('/opt/mihomo/config.yaml')
 PROXY_PROBE_TARGETS = ('https://anyrouter.top/login', 'https://agentrouter.org/login')
 WATCHDOG_INTERVAL = 300      # 5 分钟探一次
 WATCHDOG_THRESHOLD = 3       # 连续 3 次（约 15 分钟）失败才动手
@@ -1016,6 +1018,84 @@ def find_working_node(exclude: str | None) -> tuple[str | None, str]:
 	return None, ''
 
 
+def node_hosts() -> list[str]:
+	"""配置里所有节点的 server 地址（去重，保持顺序）。"""
+	try:
+		text = MIHOMO_CONFIG.read_text(encoding='utf-8')
+	except Exception:
+		return []
+	seen, out = set(), []
+	for m in re.finditer(r'server:\s*"?([A-Za-z0-9._-]+)"?', text):
+		h = m.group(1)
+		if h not in seen:
+			seen.add(h)
+			out.append(h)
+	return out
+
+
+def resolves(host: str) -> str | None:
+	"""host 能否解析成 IP。返回第一个 IP，或 None。"""
+	try:
+		return socket.getaddrinfo(host, None, socket.AF_INET)[0][4][0]
+	except Exception:
+		return None
+
+
+def diagnose_proxy_failure() -> str:
+	"""所有节点都不通时，判断根因并给出可操作结论。
+
+	2026-08-26 踩过一次：6 个节点全部指向同一个 server 域名（只有端口和 SNI 不同），
+	机场把那条子域名记录删了（NXDOMAIN），于是 6 个节点同时死 —— 切节点毫无意义，
+	watchdog 白切一圈。当时告警只说「可能是机场故障或订阅过期」，等于从零开始查。
+	这里直接把 DNS 结论写进告警，并试几个相邻子域名（那次机场就是迁到了 dd2d1）。
+	"""
+	hosts = node_hosts()
+	if not hosts:
+		return '读不到节点配置，无法进一步判断。'
+
+	dead = [h for h in hosts if not resolves(h)]
+	if not dead:
+		return (f'节点域名解析正常（{len(hosts)} 个），问题在链路或机场服务端 —— '
+				f'域名能解析但连不上，通常是节点被下线或限速。')
+
+	lines = [f'⚠️ {len(dead)}/{len(hosts)} 个节点域名<b>解析失败</b>：']
+	for h in dead:
+		lines.append(f'   · <code>{F.esc(h)}</code>')
+	if len(hosts) == 1:
+		lines.append('')
+		lines.append('所有节点共用这一个域名，所以会同时失效 —— 切节点没有意义。')
+
+	# 机场换入口域名时通常只挪一位，试几个相邻的
+	found = []
+	for h in dead[:1]:
+		parts = h.split('.', 1)
+		if len(parts) != 2:
+			continue
+		sub, root = parts
+		cands = []
+		m = re.match(r'^([a-z]+)(\d+)([a-z]+)(\d+)$', sub)
+		if m:
+			a, i, b, j = m.group(1), int(m.group(2)), m.group(3), int(m.group(4))
+			cands = [f'{a}{i}{b}{j + k}' for k in (1, 2)] + \
+					[f'{a}{i + k}{b}{j}' for k in (1, 2)]
+		for c in cands[:6]:
+			ip = resolves(f'{c}.{root}')
+			if ip:
+				found.append((f'{c}.{root}', ip))
+
+	if found:
+		lines.append('')
+		lines.append('🔍 这些相邻域名<b>可以解析</b>，机场可能已迁移：')
+		for host, ip in found:
+			lines.append(f'   · <code>{F.esc(host)}</code> → <code>{F.esc(ip)}</code>')
+		lines.append('')
+		lines.append('确认端口通了之后，改 /opt/mihomo/config.yaml 里的 server 再重启 mihomo。')
+	else:
+		lines.append('')
+		lines.append('没探到可用的相邻域名，需要去机场后台拿新订阅。')
+	return chr(10).join(lines)
+
+
 def proxy_watchdog():
 	"""看住代理节点。
 
@@ -1057,8 +1137,8 @@ def proxy_watchdog():
 			else:
 				switch_node(current)   # 都不通就切回去，至少状态可预期
 				send(OWNER, f'<b>🔴 所有节点都不可用</b>\n\n'
-							f'已切回 <code>{F.esc(current)}</code>。\n'
-							f'可能是机场故障或订阅过期，需要人工处理。\n'
+							f'已切回 <code>{F.esc(current)}</code>。\n\n'
+							f'{diagnose_proxy_failure()}\n\n'
 							f'用 /proxy 查看节点列表。')
 				print('[WATCHDOG] 所有节点均不可用', flush=True)
 			fails = 0
