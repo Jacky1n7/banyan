@@ -1041,6 +1041,37 @@ def resolves(host: str) -> str | None:
 		return None
 
 
+SUB_UPDATER = Path('/opt/mihomo/update_sub.py')
+
+
+def try_subscription_repair() -> tuple[bool, str]:
+	"""全部节点失效时，先从订阅拉一份最新节点试着自救。
+
+	2026-08-26 那次故障的教训：机场把节点域名从 dd1d1 换到 dd2d1，端口和 SNI 也一起
+	换了（美国节点 42054/usj1 → 25137/usj2，那正是它长期连不上的原因）。这些信息
+	订阅里全都有 —— 手动维护 config.yaml 才会看不见。
+
+	放在 watchdog 里而不是定时跑：更新要重启 mihomo，会打断正在进行的签到，
+	所以只在真的全挂时才动。update_sub.py 自带备份与回滚，新配置一个节点都不通时
+	会自己退回旧配置。
+	"""
+	if not SUB_UPDATER.exists():
+		return False, '没有 update_sub.py，跳过订阅自愈'
+	try:
+		r = subprocess.run(['python3', str(SUB_UPDATER)],
+						   capture_output=True, text=True, timeout=300)
+	except subprocess.TimeoutExpired:
+		return False, '订阅更新超时（5 分钟）'
+	except Exception as exc:
+		return False, f'订阅更新异常：{type(exc).__name__}'
+
+	out = (r.stdout or '') + (r.returncode and (r.stderr or '') or '')
+	# 只把结论行带进告警，别把整段日志糊上去
+	keep = [ln.strip() for ln in out.splitlines()
+			if ln.startswith(('[SUCCESS]', '[FAILED]', '[INFO] 订阅里', '[INFO] 流量'))]
+	return r.returncode == 0, chr(10).join(f'   {ln}' for ln in keep[:5]) or '无输出'
+
+
 def diagnose_proxy_failure() -> str:
 	"""所有节点都不通时，判断根因并给出可操作结论。
 
@@ -1136,11 +1167,23 @@ def proxy_watchdog():
 				print(f'[WATCHDOG] 已切换到 {name}（{info}）', flush=True)
 			else:
 				switch_node(current)   # 都不通就切回去，至少状态可预期
-				send(OWNER, f'<b>🔴 所有节点都不可用</b>\n\n'
-							f'已切回 <code>{F.esc(current)}</code>。\n\n'
+				print('[WATCHDOG] 所有节点均不可用，尝试从订阅自愈', flush=True)
+				send(OWNER, f'<b>🟠 所有节点都不可用</b>\n\n'
 							f'{diagnose_proxy_failure()}\n\n'
-							f'用 /proxy 查看节点列表。')
-				print('[WATCHDOG] 所有节点均不可用', flush=True)
+							f'⏳ 正在尝试从订阅拉取最新节点…')
+				repaired, detail = try_subscription_repair()
+				if repaired and probe_proxy()[0]:
+					now = (proxy_data() or {}).get('now')
+					send(OWNER, f'<b>✅ 已从订阅自动修复</b>\n\n'
+								f'🔌 <code>{F.esc(now)}</code>\n\n'
+								f'<pre>{F.esc(detail)}</pre>\n'
+								f'💡 若出口 IP 变了，首轮签到可能触发一次自动重登，属正常。')
+					print(f'[WATCHDOG] 订阅自愈成功，当前 {now}', flush=True)
+				else:
+					send(OWNER, f'<b>🔴 订阅自愈失败，需要人工处理</b>\n\n'
+								f'<pre>{F.esc(detail)}</pre>\n'
+								f'用 /proxy 查看节点，或去机场后台确认订阅是否过期。')
+					print('[WATCHDOG] 订阅自愈失败', flush=True)
 			fails = 0
 		except Exception:
 			traceback.print_exc()
