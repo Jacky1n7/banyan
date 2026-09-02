@@ -81,8 +81,8 @@ export function buildConfig(env: NodeJS.ProcessEnv) {
     checkinScheduleMode: (env.CHECKIN_SCHEDULE_MODE || 'cron').trim().toLowerCase() === 'interval'
       ? 'interval' as const
       : 'cron' as const,
-    checkinIntervalHours: Math.min(24, Math.max(1, Math.trunc(parseNumber(env.CHECKIN_INTERVAL_HOURS, 6)))),
-    balanceRefreshCron: env.BALANCE_REFRESH_CRON || '0 * * * *',
+    checkinIntervalHours: Math.min(24, Math.max(1, Math.trunc(parseNumber(env.CHECKIN_INTERVAL_HOURS, 12)))),
+    balanceRefreshCron: env.BALANCE_REFRESH_CRON || '37 9,21 * * *',
     logCleanupCron: env.LOG_CLEANUP_CRON || '0 6 * * *',
     logCleanupConfigured: false,
     logCleanupUsageLogsEnabled: parseBoolean(env.LOG_CLEANUP_USAGE_LOGS_ENABLED, false),

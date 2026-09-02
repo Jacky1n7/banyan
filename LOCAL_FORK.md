@@ -82,6 +82,32 @@ metapi（唯一入口：面板 / 连接管理 / 调度 / 签到日志 / 消息�
 - 前端：`request()` 默认 `timeoutMs = 30_000` 太短，给 6 个会走浏览器的调用
   加了 `BROWSER_OP_TIMEOUT_MS`（240s）/ `BROWSER_BATCH_TIMEOUT_MS`（600s）
 
+### 5. 调度默认值降频（`config.ts` / `.env.example` / `docker/` / `deploy/k3s/`）
+
+上游默认 `BALANCE_REFRESH_CRON=0 * * * *`（每小时）+ `CHECKIN_INTERVAL_HOURS=6`。
+对纯 HTTP 的站点无所谓，但本 fork 每次调用都**真起一个浏览器**过 WAF：
+2 个 anyrouter 账号 × 每小时刷余额 ≈ 48 次/天，加上签到共约 60 次/天，
+且全部来自同一个出口 IP。
+
+2026-09-02 实测后果：阿里云 ESA 把出口 IP 拉黑，**全站**（含首页 `/`）返回 403，
+`via` 头带边缘拦截码 `403102`。定位靠的是对照实验 —— 同一时刻家用宽带 IP
+访问 anyrouter.top 正常拿到 JS 挑战页，而服务器两条出口（Oracle 直连
+`203.0.113.10` + 机场节点）全部硬 403。所以是 **IP 级封禁**，不是指纹问题、
+不是挑战算法变更、也不是站点策略调整：
+
+- CloakBrowser 当时**成功过了 WAF**（日志 `Got 3 WAF cookies` / `Successfully got all WAF cookies`），
+  403 发生在拿到 cookie 之后的接口请求
+- 把接口请求改成在浏览器页面内 `fetch`（真 TLS 指纹 + 同源 + 全部 WAF cookie）**照样 403**
+- 上游 `newApiShield.ts` 的 `node:vm` 求解器输出与挑战页 JS 实际执行结果**逐字节一致**，
+  算法没变（顺带说明：那条路径对 anyrouter 是死代码，见本文档开头）
+
+改为 `37 9,21 * * *`（每天 2 次，且避开整点分钟）+ 间隔 12 小时后，
+请求量从约 60 次/天降到约 8 次/天，同时保留每天一次重试余量。
+
+**不要把这两个值调回去。** 签到奖励一天只发一份，刷得再勤也拿不到第二份；
+而 `checkinService.ts` 里 `shouldRefreshBalance = result.success || alreadyCheckedIn`
+—— 签到成功后本来就会顺带刷余额，独立的高频余额 cron 基本是冗余的。
+
 ## 使用约定
 
 **站点的 `platform` 必须填 `anyrouter`**，agentrouter 也填这个 —— adapter 按
@@ -116,3 +142,5 @@ cd /opt/metapi && docker compose up -d
 2. 那 6 处 `adapter.login` / `adapter.verifyToken` 调用点是否变动
 3. `LoginResult` / `TokenVerifyResult` / `CheckinResult` / `BalanceInfo` 类型是否变动
 4. 前端 `api.ts` 里 6 个调用的 `timeoutMs` 是否被覆盖回默认值
+5. `config.ts` 的 `balanceRefreshCron` / `checkinIntervalHours` 默认值 ——
+   上游若改动，**保留本 fork 的降频值**（原因见「改了什么」第 5 节）

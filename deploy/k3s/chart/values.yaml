@@ -29,5 +29,5 @@ env:
   port: "4000"
   tz: Asia/Shanghai
   checkinCron: "0 8 * * *"
-  balanceRefreshCron: "0 * * * *"
+  balanceRefreshCron: "37 9,21 * * *"
   deployHelperToken: ""
