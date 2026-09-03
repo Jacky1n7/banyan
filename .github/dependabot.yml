@@ -124,6 +124,14 @@ updates:
       time: "03:00"
       timezone: Asia/Shanghai
     open-pull-requests-limit: 5
+    ignore:
+      # Node 24/25+ 的官方 slim 镜像不再发布 linux/arm/v7 manifest，而
+      # release.yml 会为 arm/v7 构建镜像。基础镜像的 major 升级需要先调整
+      # ci.yml / release.yml 的架构矩阵与 scripts/dev/docker.workflow.test.ts
+      # 守卫测试，不能由 Dependabot 自动提出。参见 PR #1。
+      - dependency-name: "node"
+        update-types:
+          - "version-update:semver-major"
     groups:
       docker:
         patterns:
