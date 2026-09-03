@@ -108,6 +108,26 @@ metapi（唯一入口：面板 / 连接管理 / 调度 / 签到日志 / 消息�
 而 `checkinService.ts` 里 `shouldRefreshBalance = result.success || alreadyCheckedIn`
 —— 签到成功后本来就会顺带刷余额，独立的高频余额 cron 基本是冗余的。
 
+### 6. 删除 `pnpm-lock.yaml`
+
+Dependabot 的 npm 生态任务**每次都失败**（2026-08-19 / 08-23 / 08-30 / 09-03 全部
+failure），错误是：
+
+```
+dependency_file_not_parseable | "/pnpm-lock.yaml not parseable"
+```
+
+后果是 npm 依赖更新与**安全告警 PR 全部收不到**（docker / github-actions 两个生态正常）。
+
+本仓库实际只用 npm —— CI 四处均为 `npm ci` + `cache: npm`，`docker/Dockerfile`
+也是 `npm ci`，且 `package.json` 无 `packageManager` 字段、仓库无
+`pnpm-workspace.yaml` / `.npmrc`、全仓库零处引用 `pnpm-lock`。该文件是上游带来的
+死文件，删掉不影响任何构建路径。
+
+**rebase 时注意**：上游仍在更新这个文件（它与 `package-lock.json` 由同一批
+Dependabot 提交一起改），所以每次 rebase 都会在此产生一次冲突，解法固定 ——
+**保持删除**。
+
 ## 使用约定
 
 **站点的 `platform` 必须填 `anyrouter`**，agentrouter 也填这个 —— adapter 按
@@ -144,3 +164,4 @@ cd /opt/metapi && docker compose up -d
 4. 前端 `api.ts` 里 6 个调用的 `timeoutMs` 是否被覆盖回默认值
 5. `config.ts` 的 `balanceRefreshCron` / `checkinIntervalHours` 默认值 ——
    上游若改动，**保留本 fork 的降频值**（原因见「改了什么」第 5 节）
+6. `pnpm-lock.yaml` —— 上游会重新带回来，**保持删除**（原因见第 6 节）
