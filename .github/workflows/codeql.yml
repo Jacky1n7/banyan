@@ -33,6 +33,11 @@ concurrency:
 jobs:
   analyze:
     name: Analyze (JavaScript/TypeScript)
+    # Code scanning 在私有仓库下需要 GitHub Advanced Security，个人账号的私有
+    # 仓库拿不到。不加此守卫时本任务恒失败（"Code scanning is not enabled
+    # for this repository"），让所有 PR 恒为红灯、定时任务也同样失败，
+    # 以致 CI 红灯失去信号量。仓库转公开或启用 GHAS 后会自动恢复执行。
+    if: ${{ !github.event.repository.private }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     strategy:
