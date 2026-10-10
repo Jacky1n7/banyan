@@ -1,3 +1,22 @@
+> [!IMPORTANT]
+> **这是 [cita-777/metapi](https://github.com/cita-777/metapi) 的破坏性 fork，不保证与上游兼容。**
+>
+> 它把 anyrouter / agentrouter 的 `login` / `verifyToken` / `getBalance` / `checkin`
+> 从纯 HTTP 改成转发给一个**真浏览器后端**，以通过阿里云 ESA 的新版 JS 挑战
+> （上游的 `node:vm` 求解器只认旧版挑战）。
+>
+> **部署前必读**
+>
+> - 本 fork **多一个外部依赖**：必须另外部署 [`checkin-backend/`](./checkin-backend/)
+>   （真浏览器 + xvfb + 可选代理）。不部署它，添加账号 / 签到 / 余额刷新会全部失效，
+>   且症状是「Token verification timed out」这类难查的超时。
+> - 改动清单、架构和踩坑记录见 [`LOCAL_FORK.md`](./LOCAL_FORK.md)。
+> - 由此带来的限制：**下方 Deploy to Render / Zeabur 按钮和 `render.yaml` /
+>   `zeabur-template.yaml` 只能部署上游形态的单容器**，容器内起不了 xvfb 和真浏览器，
+>   也没法访问你主机上的 `checkin-backend`。用托管平台就只能用非 anyrouter 站点。
+> - 下方的 badges 与 `metapi.cita777.me` 文档站指向的都是**上游**版本，其内容对本
+>   fork 的 anyrouter 改动不适用。
+
 <div align="center">
 
 <img src="docs/logos/logo-full.png" alt="Metapi" width="280">

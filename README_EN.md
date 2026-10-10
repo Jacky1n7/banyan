@@ -1,3 +1,25 @@
+> [!IMPORTANT]
+> **This is a destructive fork of [cita-777/metapi](https://github.com/cita-777/metapi);
+> it does not track upstream compatibility.**
+>
+> It rewrites anyrouter / agentrouter `login` / `verifyToken` / `getBalance` / `checkin`
+> to delegate to a **real-browser backend**, so the Aliyun ESA JS challenge can be solved
+> (upstream's `node:vm` solver only handles the older challenge format).
+>
+> **Before you deploy**
+>
+> - This fork has an **extra external dependency**: you must deploy
+>   [`checkin-backend/`](./checkin-backend/) separately (real browser + xvfb + optional proxy).
+>   Without it, adding accounts / check-in / balance refresh all fail, and the only symptom
+>   is a hard-to-diagnose timeout such as "Token verification timed out".
+> - Change list, architecture and field notes: [`LOCAL_FORK.md`](./LOCAL_FORK.md) (Chinese).
+> - Consequence: the **Deploy to Render / Zeabur buttons, `render.yaml` and
+>   `zeabur-template.yaml` can only deploy the upstream single-container shape** —
+>   a container cannot run xvfb or a real browser, nor reach the `checkin-backend` on
+>   your host. On managed platforms you are limited to non-anyrouter sites.
+> - The badges below and the `metapi.cita777.me` docs site refer to **upstream**; their
+>   content does not describe this fork's anyrouter changes.
+
 <div align="center">
 
 <img src="docs/logos/logo-full.png" alt="Metapi" width="280">
