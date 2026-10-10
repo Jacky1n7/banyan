@@ -347,6 +347,11 @@ jobs:
             echo "::warning::npm audit reported production dependency vulnerabilities; PR audit stays informational."
             exit 0
           fi
+          # Banyan fork：local-fork 等非 main/master 分支的 push 同样只告警（依赖升级由 Dependabot PR 跟进）
+          if [ "$status" -ne 0 ] && [ "${{ github.ref }}" != "refs/heads/main" ] && [ "${{ github.ref }}" != "refs/heads/master" ]; then
+            echo "::warning::npm audit reported production dependency vulnerabilities; informational on ${{ github.ref_name }}."
+            exit 0
+          fi
           exit "$status"
 
   publish-docker-arch:

@@ -11,8 +11,8 @@ function collectText(node: ReactTestInstance): string {
 }
 
 describe('Login surface', () => {
-  it('uses the site root as the documentation URL', () => {
-    expect(SITE_DOCS_URL).toBe('https://metapi.cita777.me');
+  it('uses the fork docs site as the documentation URL', () => {
+    expect(SITE_DOCS_URL).toBe('https://jacky1n7.github.io/banyan/');
   });
 
   it('uses the fork repository for the login github shortcut', () => {

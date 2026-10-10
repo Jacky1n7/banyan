@@ -116,7 +116,7 @@ metapi 对接 anyrouter / agentrouter 时，`login` / `verifyToken` / `checkin` 
 - **自托管** — 数据存本地 SQLite（也支持 MySQL / Postgres），不向第三方发送
 - **桌面应用** — 也可作为 Electron 应用运行
 
-界面与 API 的详细说明请看[上游文档站](https://metapi.cita777.me) —— 注意其内容描述的是
+界面与 API 的详细说明请看[文档站](https://jacky1n7.github.io/banyan/) —— 注意其内容描述的是
 **上游版本**，不包含本 fork 的 anyrouter 改动。
 
 > [!NOTE]

@@ -124,7 +124,7 @@ Beyond the browser backend, Banyan keeps everything metapi offers:
   is sent to third parties
 - **Desktop app** — also runs as an Electron application
 
-For UI and API details see the [upstream docs site](https://metapi.cita777.me) — note it
+For UI and API details see the [docs site](https://jacky1n7.github.io/banyan/) — note it
 documents the **upstream version** and does not cover this fork's anyrouter changes.
 
 > [!NOTE]

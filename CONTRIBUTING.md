@@ -213,7 +213,7 @@ If you're adding support for a new AI API platform / 如果您要添加对新 AI
 
 ## Getting Help / 获取帮助
 
-- 📖 [Documentation](https://metapi.cita777.me) / [文档](https://metapi.cita777.me)
+- 📖 [Documentation](https://jacky1n7.github.io/banyan/) / [文档](https://jacky1n7.github.io/banyan/)
 - 💬 [GitHub Discussions](https://github.com/Jacky1n7/banyan/discussions) / [GitHub 讨论区](https://github.com/Jacky1n7/banyan/discussions)
 - 🐛 [Issue Tracker](https://github.com/Jacky1n7/banyan/issues) / [Issue 跟踪](https://github.com/Jacky1n7/banyan/issues)
 
