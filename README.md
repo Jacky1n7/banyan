@@ -63,6 +63,8 @@ docker compose -f docker/docker-compose.yml up -d --build
 ```
 
 不用 Docker 也可以：`npm ci && npm run build && npm start`（Node.js 25+，见 `.nvmrc`）。
+如果你的 npm 是 12+，安装时会提示 install scripts 被拦截，`better-sqlite3` 等原生模块不会编译；
+先执行 `npm install-scripts approve better-sqlite3 esbuild sharp` 再 `npm ci`。
 面板默认在 `http://127.0.0.1:4000`。
 
 ### 2.（可选）部署浏览器后端

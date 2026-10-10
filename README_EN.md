@@ -68,6 +68,8 @@ docker compose -f docker/docker-compose.yml up -d --build
 ```
 
 Or without Docker: `npm ci && npm run build && npm start` (Node.js 25+, see `.nvmrc`).
+On npm 12+ the install may report blocked install scripts, which leaves native modules such as
+`better-sqlite3` uncompiled; run `npm install-scripts approve better-sqlite3 esbuild sharp` first.
 The dashboard listens on `http://127.0.0.1:4000` by default.
 
 ### 2. (Optional) Deploy the browser backend
