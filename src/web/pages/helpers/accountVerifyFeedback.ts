@@ -29,7 +29,7 @@ export function normalizeVerifyFailureMessage(message: unknown): string {
   if (!text) return '验证失败';
   const lowered = text.toLowerCase();
   if (isNetworkFailureMessage(text)) {
-    return '无法连接到 metapi 服务端，请检查服务状态或网络连接';
+    return '无法连接到 Banyan 服务端，请检查服务状态或网络连接';
   }
   if (lowered.includes('user id mismatch') || lowered.includes('does not match this token')) {
     return '填写的用户 ID 与当前 Token / Cookie 不匹配';
@@ -43,7 +43,7 @@ export function buildVerifyFailureHint(result: VerifyResultLike): string | null 
     return '这不是 Token 错误判断。请检查填写的用户 ID 是否与当前 Token / Cookie 属于同一账号。';
   }
   if (isNetworkFailureMessage(result.message)) {
-    return '这不是 Token 错误判断。请检查 metapi 服务是否在线，以及目标站点或代理是否可达。';
+    return '这不是 Token 错误判断。请检查 Banyan 服务是否在线，以及目标站点或代理是否可达。';
   }
   if (isTimeoutFailureMessage(result.message)) {
     return '这不是 Token 错误判断。目标站点响应超时，请稍后重试或检查代理/网络。';
@@ -63,7 +63,7 @@ export function buildAddAccountPrereqHint(result: VerifyResultLike): string {
     return '请先修正用户 ID 并重新验证，验证成功后才能添加账号。';
   }
   if (isNetworkFailureMessage(result.message)) {
-    return '验证请求未成功完成，请先检查 metapi 服务、站点网络或代理配置。';
+    return '验证请求未成功完成，请先检查 Banyan 服务、站点网络或代理配置。';
   }
   if (isTimeoutFailureMessage(result.message)) {
     return '验证请求超时，请先检查站点或代理连通性后再添加账号。';

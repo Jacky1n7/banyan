@@ -1099,7 +1099,7 @@ export function TokensPanel({ embedded = false, onEmbeddedActionsChange }: Token
             <input
               value={form.name}
               onChange={(e) => setForm((prev) => ({ ...prev, name: e.target.value }))}
-              placeholder="例如 metapi"
+              placeholder="例如 banyan"
               style={inputStyle}
             />
           </div>

@@ -52,7 +52,7 @@ export default function ModelAvailabilityProbeConfirmModal({
         <div id={titleId} className="modal-header" style={{ color: 'var(--color-danger)' }}>确认开启批量测活</div>
         <div id={descriptionId} className="modal-body" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           <div style={{ padding: 12, borderRadius: 'var(--radius-sm)', background: 'var(--color-danger-bg)', color: 'var(--color-danger)', fontSize: 12, lineHeight: 1.8 }}>
-            开启后，metapi 会在后台对活跃账号模型做最小化探测请求。这可能被部分中转站视为批量测活或异常行为，请务必先确认你的中转站明确允许此类探测。
+            开启后，Banyan 会在后台对活跃账号模型做最小化探测请求。这可能被部分中转站视为批量测活或异常行为，请务必先确认你的中转站明确允许此类探测。
           </div>
           <div style={{ fontSize: 13, color: 'var(--color-text-secondary)', lineHeight: 1.9 }}>
             请手动输入以下整句后再开启：

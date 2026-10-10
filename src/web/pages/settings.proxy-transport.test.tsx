@@ -109,7 +109,7 @@ describe('Settings proxy transport', () => {
 
       const websocketToggleLabel = root.root.find((node) => (
         node.type === 'label'
-        && collectText(node).includes('允许 metapi 到 Codex 上游使用 WebSocket')
+        && collectText(node).includes('允许 Banyan 到 Codex 上游使用 WebSocket')
       ));
       const websocketToggle = websocketToggleLabel.findByType('input');
       expect(websocketToggle.props.checked).toBe(false);

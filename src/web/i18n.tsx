@@ -71,7 +71,7 @@ const zhToEn: Record<string, string> = {
   '模型操练场': 'Model Playground',
   '模型测试': 'Model Testing',
   '关于': 'About',
-  '关于 Metapi': 'About Metapi',
+  '关于 Banyan': 'About Banyan',
   '站点文档': 'Site Docs',
   '任务状态已更新': 'Task status updated',
   '会话已过期，请重新登录': 'Session expired, please sign in again',
@@ -208,7 +208,7 @@ const zhToEn: Record<string, string> = {
   '代理端点': 'Proxy Endpoints',
   '路由行为': 'Routing Behavior',
   '指标口径': 'Metric Notes',
-  'metapi 将多个上游兼容供应商聚合为统一的 OpenAI / Claude 下游兼容入口。': 'Metapi aggregates multiple upstream compatible providers into a unified OpenAI / Claude compatible downstream endpoint.',
+  'banyan 将多个上游兼容供应商聚合为统一的 OpenAI / Claude 下游兼容入口。': 'Banyan aggregates multiple upstream compatible providers into a unified OpenAI / Claude compatible downstream endpoint.',
   '核心目标：自动签到、自动模型发现、自动路由重建、统一代理可观测性。': 'Core goals: auto check-in, auto model discovery, auto route rebuild, and unified proxy observability.',
   '1. 路由根据模型可用性自动生成。': '1. Routes are auto-generated based on model availability.',
   '2. 当模型或账号发生变更时，路由通道会自动重建。': '2. Route channels are auto-rebuilt when models or accounts change.',
@@ -309,7 +309,7 @@ const zhToEn: Record<string, string> = {
   '零配置嵌入式数据库': 'Zero-config embedded database',
   '项目链接': 'Project Links',
   '数据与隐私': 'Data & Privacy',
-  'Metapi 完全自托管，所有数据（账号、令牌、路由、日志）均存储在本地 SQLite 数据库中，不会向任何第三方发送数据。代理请求仅在你的服务器与上游站点之间直连传输。': 'Metapi is fully self-hosted. All data (accounts, tokens, routes, logs) is stored in a local SQLite database and never sent to any third party. Proxy requests travel directly between your server and upstream sites.',
+  'Banyan 完全自托管，所有数据（账号、令牌、路由、日志）均存储在本地 SQLite 数据库中，不会向任何第三方发送数据。代理请求仅在你的服务器与上游站点之间直连传输。': 'Banyan is fully self-hosted. All data (accounts, tokens, routes, logs) is stored in a local SQLite database and never sent to any third party. Proxy requests travel directly between your server and upstream sites.',
 };
 
 for (const [source, target] of Object.entries(zhToEnSupplemental)) {

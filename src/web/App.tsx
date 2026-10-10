@@ -188,11 +188,11 @@ export function Login({ onLogin, t }: { onLogin: (token: string) => void; t: (te
           <div className="login-brand-header">
             <div className="brand-mark-frame brand-mark-frame-hero">
               <div className="brand-mark-canvas">
-                <img src="/logo.png" alt="Metapi" className="login-brand-logo" />
+                <img src="/logo.png" alt="Banyan" className="login-brand-logo" />
               </div>
             </div>
             <div className="login-brand-summary">
-              <div className="login-brand-name">Metapi</div>
+              <div className="login-brand-name">Banyan</div>
               <div className="login-brand-kicker">{t('中转站的中转站')}</div>
             </div>
           </div>
@@ -658,8 +658,8 @@ function AppShell() {
           </button>
         )}
         <div className="topbar-logo">
-          <img src="/logo.png" alt="Metapi" style={{ width: 28, height: 28, borderRadius: 6 }} />
-          <span className="topbar-logo-text">Metapi</span>
+          <img src="/logo.png" alt="Banyan" style={{ width: 28, height: 28, borderRadius: 6 }} />
+          <span className="topbar-logo-text">Banyan</span>
         </div>
         <nav className="topbar-nav">
           {topNavItems.map((item) => (
@@ -790,8 +790,8 @@ function AppShell() {
             closeLabel={t('关闭导航')}
           >
             <div className="mobile-drawer-header">
-              <img src="/logo.png" alt="Metapi" />
-              <span>Metapi</span>
+              <img src="/logo.png" alt="Banyan" />
+              <span>Banyan</span>
             </div>
             <nav className="mobile-nav">
               {sidebarGroups.map((group) => (

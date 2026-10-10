@@ -42,7 +42,7 @@ describe('Login surface', () => {
         && node.props.className.includes('brand-mark-canvas')
       ));
 
-      expect(pageText).toContain('Metapi');
+      expect(pageText).toContain('Banyan');
       expect(pageText).toContain('中转站的中转站');
       expect(pageText).not.toContain('一个 API Key，一个入口');
       expect(pageText).toContain('兼容 New API / One API / OneHub / DoneHub / Veloera / AnyRouter / Sub2API');

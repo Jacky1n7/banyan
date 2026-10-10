@@ -44,8 +44,8 @@ if (!sanitizeUrlSourceEntry) {
 export default withMermaid(
   defineConfig({
     lang: 'zh-CN',
-    title: 'Metapi 文档',
-    description: 'Metapi 使用文档、FAQ 与维护协作指南',
+    title: 'Banyan 文档',
+    description: 'Banyan 使用文档、FAQ 与维护协作指南',
     head: [
       ['link', { rel: 'icon', type: 'image/png', sizes: '32x32', href: '/favicon.png' }],
       ['link', { rel: 'icon', type: 'image/png', sizes: '64x64', href: '/favicon-64.png' }],
@@ -63,8 +63,8 @@ export default withMermaid(
       },
     },
     themeConfig: {
-      siteTitle: 'Metapi Docs',
-      logo: '/logos/logo-icon-512.png',
+      siteTitle: 'Banyan Docs',
+      logo: '/logos/banyan-icon-512.png',
       nav: [
         { text: '首页', link: '/' },
         { text: '快速上手', link: '/getting-started' },
@@ -72,7 +72,7 @@ export default withMermaid(
         { text: 'OAuth 管理', link: '/oauth' },
         { text: 'FAQ', link: '/faq' },
         { text: '文档维护', link: '/README' },
-        { text: '项目主页', link: 'https://github.com/cita-777/metapi' },
+        { text: '项目主页', link: 'https://github.com/Jacky1n7/banyan' },
       ],
       sidebar: [
         {
@@ -106,14 +106,14 @@ export default withMermaid(
         },
       ],
       socialLinks: [
-        { icon: 'github', link: 'https://github.com/cita-777/metapi' },
+        { icon: 'github', link: 'https://github.com/Jacky1n7/banyan' },
       ],
       outline: {
         level: [2, 3],
       },
       footer: {
         message: 'MIT Licensed',
-        copyright: 'Copyright (c) 2026 Metapi Contributors',
+        copyright: 'Copyright (c) 2026 Banyan Contributors · 上游 Metapi（cita-777/metapi）',
       },
       search: {
         provider: 'local',

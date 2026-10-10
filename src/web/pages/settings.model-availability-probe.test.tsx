@@ -105,7 +105,7 @@ describe('Settings model availability probe confirmation', () => {
 
       const toggleLabel = root.root.find((node) => (
         node.type === 'label'
-        && collectText(node).includes('允许 metapi 后台主动批量测活')
+        && collectText(node).includes('允许 Banyan 后台主动批量测活')
       ));
       const toggle = toggleLabel.findByType('input');
       expect(toggle.props.checked).toBe(false);

@@ -2313,16 +2313,16 @@ export default function OAuthManagement() {
 
                 {renderGuideCard(
                   '本地部署',
-                  'metapi 和浏览器在同一台机器时，不需要 SSH 隧道。直接点击“连接”，在弹窗里完成授权即可。',
+                  'Banyan 和浏览器在同一台机器时，不需要 SSH 隧道。直接点击“连接”，在弹窗里完成授权即可。',
                   <div className="oauth-guide-copy">
-                    如果浏览器能直接访问上面的 localhost 回调地址，授权完成后会自动回到 metapi。
+                    如果浏览器能直接访问上面的 localhost 回调地址，授权完成后会自动回到 Banyan。
                   </div>,
                 )}
 
                 {activeSession.instructions.sshTunnelCommand
                   ? renderGuideCard(
                     '云端部署',
-                    'metapi 部署在 VPS、容器或远程主机时，浏览器访问到的是你自己电脑的 localhost。先在本地开 SSH 隧道，再继续登录。',
+                    'Banyan 部署在 VPS、容器或远程主机时，浏览器访问到的是你自己电脑的 localhost。先在本地开 SSH 隧道，再继续登录。',
                     <div className="oauth-guide-block-list">
                       <div className="oauth-guide-block-label">常规 SSH 隧道</div>
                       {renderCodeBlock(activeSession.instructions.sshTunnelCommand)}
