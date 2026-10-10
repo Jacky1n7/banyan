@@ -484,6 +484,9 @@ export default function UpdateCenterSection() {
         <div style={{ fontSize: 12, color: 'var(--color-text-muted)', lineHeight: 1.55 }}>
           在设置页里统一查看 GitHub Releases、Docker Hub 版本和 K3s helper 状态，避免部署信息散落在多个入口。
         </div>
+        <div style={{ fontSize: 12, color: 'var(--color-warning-text, #b45309)', lineHeight: 1.5, marginTop: 6 }}>
+          Banyan 不发布 Docker 镜像：镜像仓库请填写你自己构建推送的仓库，不要填上游镜像，否则一键更新会覆盖本 fork 的改动。
+        </div>
         <div style={{ fontSize: 12, color: 'var(--color-text-secondary)', lineHeight: 1.5, marginTop: 6 }}>
           {updateReminder.detail}
         </div>

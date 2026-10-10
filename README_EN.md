@@ -5,7 +5,7 @@
 **Turn scattered AI relay-credit into one endpoint**
 
 [![License](https://img.shields.io/badge/license-MIT-brightgreen?style=flat)](#license)
-[![Node.js](https://img.shields.io/badge/Node.js-22.15%2B-339933?logo=node.js&style=flat)](https://nodejs.org)
+[![Node.js](https://img.shields.io/badge/Node.js-25%2B-339933?logo=node.js&style=flat)](https://nodejs.org)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6?logo=typescript&style=flat)](https://www.typescriptlang.org)
 
 [Features](#features) · [Differences from upstream](#differences-from-upstream-metapi) · [Quick start](#quick-start) · [FAQ](#faq)
@@ -145,7 +145,7 @@ cp .env.example .env && chmod 600 .env
 docker compose -f docker/docker-compose.yml up -d --build
 ```
 
-Or run it directly: `npm ci && npm run build && npm start` (needs Node.js 22.15+).
+Or run it directly: `npm ci && npm run build && npm start` (needs Node.js 25+, see `.nvmrc`).
 
 ### With anyrouter / agentrouter (browser backend required)
 
@@ -168,9 +168,9 @@ agentrouter too — the adapter distinguishes by URL).
 
 ### Upgrading
 
-This fork is maintained on the `local-fork` branch. **Do not use the upstream update
-center** — its version check and default image both point at upstream, so following it
-overwrites this fork's changes (see Known limitations).
+This fork is maintained on the `local-fork` branch. The update center's version check now
+points at this repository, but **never set its image repository to the upstream image** —
+that would overwrite this fork's changes (see Known limitations).
 
 ```bash
 git pull && docker compose -f docker/docker-compose.yml up -d --build
@@ -194,14 +194,16 @@ blacklisted server's egresses got a hard 403. After recovering, **do not raise t
 scheduler frequency**.
 
 **Q: The update center says a new version is available — should I click it?**
-No. Its version check and default image currently point at the upstream repo, so updating
-will overwrite this fork's changes. Known limitation, see below.
+The version check only looks at this repository's Releases now, so it no longer reports
+upstream versions. The k3s one-click update still needs an image repository of your own:
+do not enter the upstream image `1467078763/metapi`, or the fork's changes get overwritten.
 
 ## Known limitations
 
-- **Update center points at upstream** — `updateCenterVersionService.ts` checks upstream
-  releases and `updateCenterConfigService.ts` pulls the `1467078763/metapi` image by
-  default. To use it, point it at your own image repository in settings.
+- **This fork publishes no Docker image** — the version check points at this repository
+  (override with `UPDATE_CENTER_GITHUB_REPO` / `UPDATE_CENTER_DOCKER_REPO`) and no longer
+  reports upstream versions, but the k3s update center needs an image repository you build
+  and push yourself — **never the upstream image**.
 - **Managed platforms only run the reduced shape** — see the notice at the top.
 - **Only `anyrouter` is accepted as `platform`** — using `new-api` falls back to the plain
   HTTP implementation and anyrouter features stop working.

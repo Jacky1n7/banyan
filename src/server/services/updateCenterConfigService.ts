@@ -25,6 +25,7 @@ export function getDefaultUpdateCenterConfig(): UpdateCenterConfig {
     namespace: 'default',
     releaseName: '',
     chartRef: '',
+    // 上游默认值。Banyan 不发布镜像：使用 k3s 更新中心前必须在设置里改成自己的镜像仓库
     imageRepository: '1467078763/metapi',
     githubReleasesEnabled: true,
     dockerHubTagsEnabled: true,

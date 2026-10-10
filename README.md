@@ -5,7 +5,7 @@
 **把散落在各个 AI 中转站的额度，聚成一个入口**
 
 [![License](https://img.shields.io/badge/license-MIT-brightgreen?style=flat)](#许可)
-[![Node.js](https://img.shields.io/badge/Node.js-22.15%2B-339933?logo=node.js&style=flat)](https://nodejs.org)
+[![Node.js](https://img.shields.io/badge/Node.js-25%2B-339933?logo=node.js&style=flat)](https://nodejs.org)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6?logo=typescript&style=flat)](https://www.typescriptlang.org)
 
 [功能](#功能) · [与上游的区别](#与上游-metapi-的区别) · [快速开始](#快速开始) · [常见问题](#常见问题)
@@ -137,7 +137,7 @@ cp .env.example .env && chmod 600 .env
 docker compose -f docker/docker-compose.yml up -d --build
 ```
 
-或直接 `npm ci && npm run build && npm start`（需要 Node.js 22.15+）。
+或直接 `npm ci && npm run build && npm start`（需要 Node.js 25+，见 `.nvmrc`）。
 
 ### 要用 anyrouter / agentrouter（需要浏览器后端）
 
@@ -159,9 +159,8 @@ adapter 按 URL 分辨具体是哪个站）。
 
 ### 升级
 
-本 fork 用 `local-fork` 分支维护，**不要依赖上游的更新中心** ——
-它的版本检查与默认镜像都指向上游，跟着更新会把 fork 的改动覆盖掉
-（见「已知限制」）。
+本 fork 用 `local-fork` 分支维护。更新中心的版本检查已指向本仓库，但**不要把镜像仓库填成上游镜像**，
+那会把 fork 的改动覆盖掉（见「已知限制」）。
 
 ```bash
 git pull && docker compose -f docker/docker-compose.yml up -d --build
@@ -183,14 +182,14 @@ git pull && docker compose -f docker/docker-compose.yml up -d --build
 而被拉黑的服务器两条出口都是硬 403。恢复后**不要调高调度频率**。
 
 **Q：更新中心提示有新版，能点吗？**
-不要。更新中心的版本检查和默认镜像目前指向上游仓库，跟着更新会覆盖掉本 fork 的改动。
-这是已知限制，见下。
+版本检查现在只看本仓库的 Releases，不会再提示上游版本。但 k3s 一键更新用的镜像仓库要你自己填，
+不要填上游镜像 `1467078763/metapi`，那会把 fork 的改动覆盖掉。
 
 ## 已知限制
 
-- **更新中心指向上游** — `updateCenterVersionService.ts` 检查的是上游 releases，
-  `updateCenterConfigService.ts` 默认拉 `1467078763/metapi` 镜像。想用更新中心的话，
-  需要在设置里改成你自己的镜像仓库。
+- **本 fork 不发布 Docker 镜像** — 版本检查已指向本仓库（可用 `UPDATE_CENTER_GITHUB_REPO` /
+  `UPDATE_CENTER_DOCKER_REPO` 覆盖），不会再提示上游版本；但 k3s 更新中心的镜像仓库需要
+  你自己构建推送后在设置里填写，**不要填上游镜像**。
 - **托管平台只能跑简化形态** — 见顶部提示。
 - **`platform` 只认 `anyrouter`** — 填 `new-api` 会掉回纯 HTTP 实现，anyrouter 相关功能失效。
 - **界面存在上游残留命名** — 部分描述文案与内部标识仍是 `metapi`，属有意保留（见顶部提示）。

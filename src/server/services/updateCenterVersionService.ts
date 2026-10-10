@@ -45,8 +45,27 @@ export type DockerHubTagCandidates = {
 };
 
 const STABLE_SEMVER_PATTERN = /^v?(\d+)\.(\d+)\.(\d+)(?:\+[\w.-]+)?$/i;
-const GITHUB_RELEASES_URL = 'https://api.github.com/repos/cita-777/metapi/releases';
-const DOCKER_HUB_TAGS_URL = 'https://hub.docker.com/v2/repositories/1467078763/metapi/tags?page_size=100';
+// Banyan fork：版本检查指向本仓库，而不是上游 cita-777/metapi；本 fork 不发布 Docker 镜像，
+// 所以 Docker Hub 检查默认关闭。两者都可用环境变量覆盖（owner/repo 形式）。
+const DEFAULT_UPDATE_CENTER_GITHUB_REPO = 'Jacky1n7/banyan';
+const DEFAULT_UPDATE_CENTER_DOCKER_REPO = '';
+
+export function getUpdateCenterGitHubRepo(): string {
+  return String(process.env.UPDATE_CENTER_GITHUB_REPO || DEFAULT_UPDATE_CENTER_GITHUB_REPO).trim();
+}
+
+export function getUpdateCenterDockerRepo(): string {
+  return String(process.env.UPDATE_CENTER_DOCKER_REPO ?? DEFAULT_UPDATE_CENTER_DOCKER_REPO).trim();
+}
+
+export function getUpdateCenterGitHubReleasesUrl(): string {
+  return `https://api.github.com/repos/${getUpdateCenterGitHubRepo()}/releases`;
+}
+
+export function getUpdateCenterDockerHubTagsUrl(): string | null {
+  const repo = getUpdateCenterDockerRepo();
+  return repo ? `https://hub.docker.com/v2/repositories/${repo}/tags?page_size=100` : null;
+}
 const UPDATE_CENTER_VERSION_FETCH_TIMEOUT_MS = 5_000;
 const PREFERRED_DOCKER_HUB_TAG_ALIASES = ['latest', 'main'] as const;
 const MAX_RECENT_NON_STABLE_DOCKER_HUB_TAGS = 5;
@@ -281,7 +300,7 @@ export function resolvePreferredDeploySource(input: {
 }
 
 export async function fetchLatestStableGitHubRelease(): Promise<UpdateCenterVersionCandidate | null> {
-  const releases = await fetchJsonWithTimeout(GITHUB_RELEASES_URL, {
+  const releases = await fetchJsonWithTimeout(getUpdateCenterGitHubReleasesUrl(), {
     headers: {
       accept: 'application/vnd.github+json',
       'user-agent': 'metapi-update-center/1.0',
@@ -295,7 +314,11 @@ export async function fetchLatestDockerHubTag(): Promise<UpdateCenterVersionCand
 }
 
 export async function fetchDockerHubTagCandidates(): Promise<DockerHubTagCandidates> {
-  const payload = await fetchJsonWithTimeout(DOCKER_HUB_TAGS_URL, {
+  const url = getUpdateCenterDockerHubTagsUrl();
+  if (!url) {
+    return { primary: null, recentNonStable: [] };
+  }
+  const payload = await fetchJsonWithTimeout(url, {
     headers: {
       accept: 'application/json',
       'user-agent': 'metapi-update-center/1.0',

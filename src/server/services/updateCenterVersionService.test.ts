@@ -1,4 +1,4 @@
-import { describe, expect, it, vi, beforeEach } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const { fetchMock } = vi.hoisted(() => ({
   fetchMock: vi.fn(),
@@ -268,7 +268,7 @@ describe('update center version service', () => {
         normalizedVersion: '1.10.0',
         url: 'https://example.com/latest',
       });
-      expect(String(fetchMock.mock.calls[0]?.[0] || '')).toContain('/repos/cita-777/metapi/releases');
+      expect(String(fetchMock.mock.calls[0]?.[0] || '')).toContain('/repos/Jacky1n7/banyan/releases');
     });
 
     it('maps aborted GitHub lookups to a timeout error', async () => {
@@ -281,6 +281,14 @@ describe('update center version service', () => {
   });
 
   describe('fetchLatestDockerHubTag', () => {
+    // Banyan fork 默认不检查 Docker Hub（不发布镜像）；这里显式指向上游仓库以复用原有夹具
+    beforeEach(() => {
+      process.env.UPDATE_CENTER_DOCKER_REPO = '1467078763/metapi';
+    });
+    afterEach(() => {
+      delete process.env.UPDATE_CENTER_DOCKER_REPO;
+    });
+
     it('prefers alias tags like latest and includes digest metadata', async () => {
       fetchMock.mockResolvedValue(new Response(JSON.stringify({
         results: [
@@ -346,6 +354,14 @@ describe('update center version service', () => {
   });
 
   describe('fetchDockerHubTagCandidates', () => {
+    // Banyan fork 默认不检查 Docker Hub（不发布镜像）；这里显式指向上游仓库以复用原有夹具
+    beforeEach(() => {
+      process.env.UPDATE_CENTER_DOCKER_REPO = '1467078763/metapi';
+    });
+    afterEach(() => {
+      delete process.env.UPDATE_CENTER_DOCKER_REPO;
+    });
+
     it('returns the stable docker candidate plus recent non-stable tags from one lookup', async () => {
       fetchMock.mockResolvedValue(new Response(JSON.stringify({
         results: [

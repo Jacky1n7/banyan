@@ -770,7 +770,7 @@ export const zhToEnSupplemental: Record<string, string> = {
   'LDOH Cookie 已更新': 'LDOH Cookie updated',
   'LDOH Cookie 已清空': 'LDOH Cookie Cleared',
   'LinuxDo 可用性监控': 'LinuxDo availability monitoring',
-  'Banyan 完全自托管，所有数据（账号、令牌、路由、日志）均存储在本地 SQLite 数据库中，不会向任何第三方发送数据。代理请求仅在你的服务器与上游站点之间直连传输。': 'metapi is completely self-hosted, all data (accounts, tokens, routes, logs) is stored in a local SQLite database and no data is sent to any third party. Proxy requests only travel directly between your server and the upstream site.',
+  'Banyan 完全自托管，所有数据（账号、令牌、路由、日志）均存储在本地 SQLite 数据库中，不会向任何第三方发送数据。代理请求仅在你的服务器与上游站点之间直连传输。': 'Banyan is completely self-hosted, all data (accounts, tokens, routes, logs) is stored in a local SQLite database and no data is sent to any third party. Proxy requests only travel directly between your server and the upstream site.',
   'model 不能为空': 'model cannot be empty',
   'modelLimitsEnabled 参数无效': 'modelLimitsEnabled parameter is invalid',
   'models 必须是非空数组': 'models must be a non-empty array',
@@ -802,4 +802,5 @@ export const zhToEnSupplemental: Record<string, string> = {
   'Webhook 地址': 'Webhook address',
   'Webhook 开关': 'Webhook switch',
   'Webhook 响应状态 ${response.status}': 'Webhook response status ${response.status}',
+  'Banyan 不发布 Docker 镜像：镜像仓库请填写你自己构建推送的仓库，不要填上游镜像，否则一键更新会覆盖本 fork 的改动。': 'Banyan publishes no Docker image: enter an image repository you build and push yourself. Do not use the upstream image, or one-click update will overwrite this fork\'s changes.',
 };
