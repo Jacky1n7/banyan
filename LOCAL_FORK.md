@@ -32,16 +32,17 @@ metapi（唯一入口：面板 / 连接管理 / 调度 / 签到日志 / 消息�
 后端**故意做成无状态**：调度、连接管理、`checkin_logs`、消息推送全部由 metapi 负责，
 避免两套系统各推一份通知、各记一份日志。
 
-后端代码不在本仓库，位于 `/opt/anyrouter-check-in/`：
+后端代码在 [`checkin-backend/`](./checkin-backend/)。它**不能独立运行**：那些文件要被
+放进上游 [millylee/anyrouter-check-in](https://github.com/millylee/anyrouter-check-in)
+的 clone 目录里，和它的 `checkin.py` / `utils/`（CloakBrowser 登录、WAF cookie 获取、
+签到请求）同级。完整部署步骤见 [`checkin-backend/README.md`](./checkin-backend/README.md)。
 
 | 文件 | 职责 |
 |---|---|
 | `ext_api.py` | 本仓库 adapter 调用的 RPC 实现（login / verify / userinfo / balance / checkin） |
 | `panel.py` | HTTP 服务，路由 `/__checkin/ext/*`；同时监听回环与 docker 网桥（容器要能访问） |
 | `run_panel.sh` | systemd 入口，**必须套 xvfb** |
-
-它复用上游 [millylee/anyrouter-check-in](https://github.com/millylee/anyrouter-check-in)
-的 `checkin.py` / `utils/`（CloakBrowser 登录、WAF cookie 获取、签到请求）。
+| `paths.py` | 部署路径集中定义，支持非 `/opt` 布局 |
 
 ## 改了什么
 
@@ -59,8 +60,9 @@ metapi（唯一入口：面板 / 连接管理 / 调度 / 签到日志 / 消息�
 ### 2. `platformUserId` 不能靠猜（`base.ts` / `newApi.ts` / `accounts.ts`）
 
 上游用 `guessPlatformUserIdFromUsername()` 从用户名末尾抓 3-8 位数字。
-`linuxdo_12345` 碰巧能抓到 `80305`，但 `user@example.com` 末尾是 `.com`、
-`user@example.edu.cn` 也抓不到 → ID 为空 → 这两个站的 `/api/user/self`
+形如 `linuxdo_12345` 的用户名碰巧能抓到 `12345`，但注册邮箱形式的用户名
+（`xxx@qq.com` / `xxx@xxx.edu.cn`）末尾是 `.com` / `.cn`，抓不到 → ID 为空 →
+这两个站的 `/api/user/self`
 **不带 `New-Api-User` 头一律 401**「无权进行此操作，未提供 New-Api-User」
 → 余额恒为 0、session 被误判失效、每轮都退回密码登录（正是招来 ESA 限流的原因）。
 
@@ -91,8 +93,8 @@ metapi（唯一入口：面板 / 连接管理 / 调度 / 签到日志 / 消息�
 
 2026-09-02 实测后果：阿里云 ESA 把出口 IP 拉黑，**全站**（含首页 `/`）返回 403，
 `via` 头带边缘拦截码 `403102`。定位靠的是对照实验 —— 同一时刻家用宽带 IP
-访问 anyrouter.top 正常拿到 JS 挑战页，而服务器两条出口（Oracle 直连
-`203.0.113.10` + 机场节点）全部硬 403。所以是 **IP 级封禁**，不是指纹问题、
+访问 anyrouter.top 正常拿到 JS 挑战页，而服务器两条出口（云厂商直连
++ 机场节点）全部硬 403。所以是 **IP 级封禁**，不是指纹问题、
 不是挑战算法变更、也不是站点策略调整：
 
 - CloakBrowser 当时**成功过了 WAF**（日志 `Got 3 WAF cookies` / `Successfully got all WAF cookies`），
@@ -143,8 +145,10 @@ Dependabot 提交一起改），所以每次 rebase 都会在此产生一次冲�
 
 ## 构建与部署
 
+下面几处路径是作者本机的，按你的实际路径替换：
+
 ```bash
-cd /opt/metapi-src
+cd /opt/metapi-src            # 本仓库的 checkout
 docker build -f docker/Dockerfile -t metapi-local:vN .
 sed -i 's/metapi-local:vN-1/metapi-local:vN/' /opt/metapi/docker-compose.yml
 cd /opt/metapi && docker compose up -d
