@@ -1,496 +1,211 @@
+<div align="center">
+
+<img src="docs/logos/banyan-banner.png" alt="Banyan" width="840">
+
+**把散落在各个 AI 中转站的额度，聚成一个入口**
+
+[![License](https://img.shields.io/badge/license-MIT-brightgreen?style=flat)](#许可)
+[![Node.js](https://img.shields.io/badge/Node.js-22.15%2B-339933?logo=node.js&style=flat)](https://nodejs.org)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6?logo=typescript&style=flat)](https://www.typescriptlang.org)
+
+[功能](#功能) · [与上游的区别](#与上游-metapi-的区别) · [快速开始](#快速开始) · [常见问题](#常见问题)
+
+</div>
+
+---
+
 > [!IMPORTANT]
-> **这是 [cita-777/metapi](https://github.com/cita-777/metapi) 的破坏性 fork，不保证与上游兼容。**
+> **Banyan 是 [metapi](https://github.com/cita-777/metapi) 的破坏性 fork，不与上游保持兼容。**
 >
-> 它把 anyrouter / agentrouter 的 `login` / `verifyToken` / `getBalance` / `checkin`
-> 从纯 HTTP 改成转发给一个**真浏览器后端**，以通过阿里云 ESA 的新版 JS 挑战
-> （上游的 `node:vm` 求解器只认旧版挑战）。
+> 它在 metapi 基础上把 anyrouter / agentrouter 的 `login` / `verifyToken` /
+> `getBalance` / `checkin` 从纯 HTTP 改成转发给一个**真浏览器后端**，
+> 用来通过阿里云 ESA 的新版 JS 挑战。
 >
 > **部署前必读**
 >
-> - 本 fork **多一个外部依赖**：必须另外部署 [`checkin-backend/`](./checkin-backend/)
+> - 本 fork **多一个外部依赖**：[`checkin-backend/`](./checkin-backend/)，必须另外部署
 >   （真浏览器 + xvfb + 可选代理）。不部署它，添加账号 / 签到 / 余额刷新会全部失效，
->   且症状是「Token verification timed out」这类难查的超时。
-> - 改动清单、架构和踩坑记录见 [`LOCAL_FORK.md`](./LOCAL_FORK.md)。
-> - 由此带来的限制：**下方 Deploy to Render / Zeabur 按钮和 `render.yaml` /
->   `zeabur-template.yaml` 只能部署上游形态的单容器**，容器内起不了 xvfb 和真浏览器，
->   也没法访问你主机上的 `checkin-backend`。用托管平台就只能用非 anyrouter 站点。
-> - 下方的 badges 与 `metapi.cita777.me` 文档站指向的都是**上游**版本，其内容对本
->   fork 的 anyrouter 改动不适用。
-
-<div align="center">
-
-<img src="docs/logos/logo-full.png" alt="Metapi" width="280">
-
-**中转站的中转站 — 将分散的 AI 中转站聚合为一个统一网关**
-
-<p>
-把你在各处注册的 New API / One API / OneHub / DoneHub / Veloera / AnyRouter / Sub2API 等站点，
-<br>
-汇聚成 <strong>一个 API Key、一个入口</strong>，自动发现模型、智能路由、成本最优。
-</p>
-
-
-<p align="center">
-<a href="https://github.com/cita-777/metapi/releases">
-  <img alt="GitHub Release" src="https://img.shields.io/github/v/release/cita-777/metapi?label=Release&logo=github&style=flat">
-</a><a href="https://github.com/cita-777/metapi/stargazers">
-  <img alt="GitHub Stars" src="https://img.shields.io/github/stars/cita-777/metapi?style=flat&logo=github&label=Stars">
-</a><a href="https://atomgit.com/cita-777/metapi">
-  <img alt="AtomGit Stars" src="https://atomgit.com/cita-777/metapi/star/badge.svg">
-</a><a href="https://deepwiki.com/cita-777/metapi">
-  <img alt="Ask DeepWiki" src="https://deepwiki.com/badge.svg">
-</a><a href="https://hub.docker.com/r/1467078763/metapi">
-  <img alt="Docker Pulls" src="https://img.shields.io/docker/pulls/1467078763/metapi?style=flat&logo=docker&label=Docker%20Pulls">
-</a><a href="https://hub.docker.com/r/1467078763/metapi">
-  <img alt="License" src="https://img.shields.io/badge/license-MIT-brightgreen?style=flat">
-</a><img alt="Node.js" src="https://img.shields.io/badge/Node.js-22.15%2B-339933?logo=node.js&style=flat"><img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-5.x-3178C6?logo=typescript&style=flat"><a href="https://zeabur.com/templates/DOX5PR">
-  <img alt="Deploy on Zeabur" src="https://zeabur.com/button.svg" height="28">
-</a><a href="https://render.com/deploy?repo=https://github.com/cita-777/metapi">
-  <img alt="Deploy to Render" src="https://render.com/images/deploy-to-render-button.svg" height="28">
-</a>
-</p>
-
-<p align="center">
-  <a href="README.md"><strong>中文</strong></a> |
-  <a href="README_EN.md">English</a>
-</p>
-
-<p align="center">
-  <a href="https://metapi.cita777.me"><strong>📚 在线文档</strong></a> ·
-  <a href="https://metapi.cita777.me/getting-started">快速上手</a> ·
-  <a href="https://metapi.cita777.me/deployment">部署指南</a> ·
-  <a href="https://metapi.cita777.me/configuration">配置说明</a> ·
-  <a href="https://metapi.cita777.me/client-integration">客户端接入</a> ·
-  <a href="https://metapi.cita777.me/faq">常见问题</a>
-</p>
-
-</div>
-
----
-
-## 🌐 在线体验
-
-> 无需部署，直接体验 Metapi 的完整功能：
-
-|                        |                                                            |
-| ---------------------- | ---------------------------------------------------------- |
-| 🔗**体验地址**   | [metapi-t9od.onrender.com](https://metapi-t9od.onrender.com/) |
-| 🔑**管理员令牌** | `123456`                                                 |
-
-> **⚠️ 安全提示**：体验站为公共环境，**请勿填入你的 API Key、账号密码或站点信息**。数据随时可能被清空。
-
-> **ℹ️ 说明**：体验站使用 Render 免费方案 + OpenRouter 免费模型（仅 `:free` 后缀的模型可用）。
-
----
-
-## 📖 介绍
-
-现在 AI 生态里有越来越多基于 New API / One API 系列的聚合中转站，要管理多个站点的余额、模型列表和 API 密钥，往往既分散又费时。
-
-**Metapi** 作为这些中转站之上的**元聚合层（Meta-Aggregation Layer）**，把多个站点统一到 **一个入口（可按项目配置多个下游 API Key）**——下游所有工具（Cursor、Claude Code、Codex、Open WebUI 等）即可无感接入全部模型。当前支持的上游范围已经不止传统聚合面板，还包括：
-
-- 聚合面板： [New API](https://github.com/QuantumNous/new-api)、[One API](https://github.com/songquanpeng/one-api)、[OneHub](https://github.com/MartialBE/one-hub)、[DoneHub](https://github.com/deanxv/done-hub)、[Veloera](https://github.com/Veloera/Veloera)、[AnyRouter](https://anyrouter.top)、[Sub2API](https://github.com/Wei-Shaw/sub2api)
-- 通用兼容接口：OpenAI / Claude / Gemini compatible endpoints，以及 `cliproxyapi` / CPA
-- 官方预设：阿里云 / 智谱 / 豆包 Coding Plan，DeepSeek，Moonshot(Kimi)，MiniMax，ModelScope
-- OAuth 连接：Codex、Claude、Gemini CLI、Antigravity
-
-详细接法见 [上游接入](./docs/upstream-integration.md) 与 [OAuth 管理](./docs/oauth.md)。
-
-| 痛点                                  | Metapi 怎么解决                                                        |
-| ------------------------------------- | ---------------------------------------------------------------------- |
-| 🔑 每个站点一个 Key，下游工具配置一堆 | **统一代理入口 + 可选多下游 Key 策略**，模型自动聚合到 `/v1/*` |
-| 💸 不知道哪个站点用某个模型最便宜     | **智能路由** 自动按成本、余额、使用率选最优通道                  |
-| 🔄 某个站点挂了，手动切换好麻烦       | **自动故障转移**，一个通道失败自动冷却并切到下一个               |
-| 📊 余额分散在各处，不知道还剩多少     | **集中看板** 一目了然，余额不足自动告警                          |
-| ✅ 每天得去各站签到领额度             | **自动签到** 定时执行，奖励自动追踪                              |
-| 🤷 不知道哪个站有什么模型             | **自动模型发现**，上游新增模型零配置出现在你的模型列表里         |
-
----
-
-## 🖼️ 界面预览
-
-<table>
-  <tr>
-    <td align="center">
-      <img src="docs/screenshots/dashboard.png" alt="dashboard" style="width:100%;height:auto;"/>
-      <div><b>仪表盘</b> — 余额分布、消费趋势、系统概览</div>
-    </td>
-    <td align="center">
-      <img src="docs/screenshots/model-marketplace.png" alt="model-marketplace" style="width:100%;height:auto;"/>
-      <div><b>模型广场</b> — 跨站模型覆盖、定价对比、实测指标</div>
-    </td>
-  </tr>
-  <tr>
-    <td align="center">
-      <img src="docs/screenshots/routes.png" alt="routes" style="width:100%;height:auto;"/>
-      <div><b>智能路由</b> — 多通道概率分配、成本优先选路</div>
-    </td>
-    <td align="center">
-      <img src="docs/screenshots/accounts.png" alt="accounts" style="width:100%;height:auto;"/>
-      <div><b>账号管理</b> — 多站点多账号、健康状态追踪</div>
-    </td>
-  </tr>
-  <tr>
-    <td align="center">
-      <img src="docs/screenshots/sites.png" alt="sites" style="width:100%;height:auto;"/>
-      <div><b>站点管理</b> — 上游站点配置与状态一览</div>
-    </td>
-    <td align="center">
-      <img src="docs/screenshots/tokens.png" alt="tokens" style="width:100%;height:auto;"/>
-      <div><b>令牌管理</b> — API Token 生命周期管理</div>
-    </td>
-  </tr>
-  <tr>
-    <td align="center">
-      <img src="docs/screenshots/playground.png" alt="playground" style="width:100%;height:auto;"/>
-      <div><b>模型操练场</b> — 在线交互式模型测试</div>
-    </td>
-    <td align="center">
-      <img src="docs/screenshots/checkin.png" alt="checkin" style="width:100%;height:auto;"/>
-      <div><b>签到记录</b> — 自动签到状态与奖励追踪</div>
-    </td>
-  </tr>
-  <tr>
-    <td align="center">
-      <img src="docs/screenshots/proxy-logs.png" alt="proxy-logs" style="width:100%;height:auto;"/>
-      <div><b>使用日志</b> — 代理请求日志与成本明细</div>
-    </td>
-    <td align="center">
-      <img src="docs/screenshots/monitor.png" alt="monitor" style="width:100%;height:auto;"/>
-      <div><b>可用性监控</b> — 通道健康度实时监测</div>
-    </td>
-  </tr>
-  <tr>
-    <td align="center">
-      <img src="docs/screenshots/settings.png" alt="settings" style="width:100%;height:auto;"/>
-      <div><b>系统设置</b> — 全局参数与安全配置</div>
-    </td>
-    <td align="center">
-      <img src="docs/screenshots/notification-settings.png" alt="notification-settings" style="width:100%;height:auto;"/>
-      <div><b>通知设置</b> — 多渠道告警与推送配置</div>
-    </td>
-  </tr>
-</table>
-
----
-
-## 🏛️ 架构概览
-
-<div align="center">
-  <img src="docs/screenshots/metapi-architecture.png" alt="Metapi: Federated AI Model Aggregation Gateway Architecture" style="max-width: 100%; height: auto;" />
-</div>
-
----
-
-## ✨ 核心功能
-
-### 🌐 统一代理网关
-
-- 兼容 **OpenAI** 与 **Claude** 下游格式，对接所有主流客户端
-- 支持 Responses / Chat Completions / Messages / Completions（Legacy）/ Embeddings / Images / Models，以及标准 `/v1/files` 文件接口
-- 完整的 SSE 流式传输支持，自动格式转换（OpenAI ⇄ Claude）
-
-### 🧠 智能路由引擎
-
-- 自动发现所有上游站点的可用模型，**零配置**生成路由表
-- 四级成本信号：**实测成本 → 账号配置成本 → 目录参考价 → 默认兜底**
-- 多通道概率分摊，基于成本（40%）、余额（30%）、使用率（30%）加权分配
-- 失败通道自动冷却与避让（默认 10 分钟冷却期）
-- 请求失败自动重试，自动切换其他可用通道
-- 路由决策可视化解释，每次选择透明可审计
-
-<div align="center">
-  <img src="docs/screenshots/routes.png" alt="smart-routing-detail" width="700"/>
-  <p><sub>智能路由配置界面 — 支持精确匹配、通配符、概率分配等多种路由策略</sub></p>
-</div>
-
-### 📡 多平台聚合管理
-
-| 平台                | 适配器        | 说明                 |
-| ------------------- | ------------- | -------------------- |
-| **New API**   | `new-api`   | 新一代大模型网关     |
-| **One API**   | `one-api`   | 经典 OpenAI 接口聚合 |
-| **OneHub**    | `onehub`    | One API 增强分支     |
-| **DoneHub**   | `done-hub`  | OneHub 增强分支      |
-| **Veloera**   | `veloera`   | API 网关平台         |
-| **AnyRouter** | `anyrouter` | 通用路由平台         |
-| **Sub2API**   | `sub2api`   | 订阅制中转平台       |
-
-各平台适配器覆盖模型枚举、余额查询、Token 管理、代理接入等通用能力；登录、签到、用户信息等能力按平台而异。
-
-### 👥 账号与 Token 管理
-
-- **多站点多账号**：每个站点可添加多个账号，每个账号可持有多个 API Token
-- **健康状态追踪**：`healthy` / `unhealthy` / `degraded` / `disabled` 四级状态机
-- **凭证加密存储**：所有敏感凭证均加密保存在本地数据库中
-- **自动续签**：Token 过期时自动重新登录获取新凭证
-- **站点联动**：禁用站点自动级联禁用所有关联账号
-
-### 🏪 模型广场
-
-- 跨站点模型覆盖总览：哪些模型可用、多少账号覆盖、各站定价对比
-- 延迟、成功率等实测指标展示
-- 上游模型目录缓存与品牌分类（OpenAI、Anthropic、Google、DeepSeek 等）
-- 交互式模型测试器，在线验证模型可用性
-
-<div align="center">
-  <img src="docs/screenshots/model-marketplace.png" alt="model-marketplace-detail" width="700"/>
-  <p><sub>模型广场 — 一站式浏览所有可用模型的覆盖率、定价和性能指标</sub></p>
-</div>
-
-### ✅ 自动签到
-
-- Cron 定时执行（默认每日 08:00）
-- 智能解析奖励金额，签到失败自动通知
-- 按账号启用/禁用控制
-- 完整签到日志与历史查询
-- 并发锁防止重复签到
-
-### 💰 余额管理
-
-- 定时余额刷新（默认每小时），批量更新所有活跃账号
-- 收入追踪：每日/累计收入与消费趋势分析
-- 余额兜底估算：API 不可用时通过代理日志推算余额变动
-- 凭证过期自动重新登录
-
-### 🔔 告警通知
-
-支持五种通知渠道：
-
-| 渠道                   | 说明              |
-| ---------------------- | ----------------- |
-| **Webhook**      | 自定义 HTTP 推送  |
-| **Bark**         | iOS 推送通知      |
-| **Server酱**     | 微信通知          |
-| **Telegram Bot** | Telegram 消息通知 |
-| **SMTP 邮件**    | 标准邮件通知      |
-
-告警场景：余额不足预警、站点/账号异常、签到失败、代理请求失败、Token 过期提醒、每日摘要报告。告警冷却机制（默认 300 秒）防止重复通知。
-
-### 📊 数据看板
-
-- 站点余额饼图、每日消费趋势图
-- 全局搜索（站点、账号、模型）
-- 系统事件日志、代理请求日志（模型、状态、延迟、Token 用量、成本估算）
-
-<div align="center">
-  <img src="docs/screenshots/dashboard.png" alt="dashboard-detail" width="700"/>
-  <p><sub>数据看板 — 余额分布、消费趋势、系统健康状态一目了然</sub></p>
-</div>
-
-### 🎮 模型操练场
-
-- 交互式聊天测试，即时验证模型可用性与响应质量
-- 选择任意路由模型，对比不同通道输出
-- 流式 / 非流式双模式测试
-
-<div align="center">
-  <img src="docs/screenshots/playground.png" alt="playground-detail" width="700"/>
-  <p><sub>模型操练场 — 在线交互测试，验证模型可用性与响应质量</sub></p>
-</div>
-
-### 📦 轻量部署
-
-- **单 Docker 容器**，默认本地数据目录部署，支持外接 MySQL / PostgreSQL 运行时数据库
-- Docker 镜像支持 `amd64`、`arm64` 和 `armv7l`（`linux/arm/v7`）服务端部署
-- 数据完整导入导出，迁移无忧
-
----
-
-## 🚀 快速开始
-
-<a href="https://zeabur.com/templates/DOX5PR">
-  <img alt="Deploy on Zeabur" src="https://zeabur.com/button.svg" height="28">
-</a>
-<a href="https://render.com/deploy?repo=https://github.com/cita-777/metapi">
-  <img alt="Deploy to Render" src="https://render.com/images/deploy-to-render-button.svg" height="28">
-</a>
-
-### Docker Compose（推荐）
-
-```bash
-mkdir metapi && cd metapi
-
-cat > docker-compose.yml << 'EOF'
-services:
-  metapi:
-    image: 1467078763/metapi:latest
-    ports:
-      - "4000:4000"
-    volumes:
-      - ./data:/app/data
-    environment:
-      AUTH_TOKEN: ${AUTH_TOKEN:?AUTH_TOKEN is required}
-      PROXY_TOKEN: ${PROXY_TOKEN:?PROXY_TOKEN is required}
-      CHECKIN_CRON: "0 8 * * *"
-      BALANCE_REFRESH_CRON: "0 * * * *"
-      PORT: ${PORT:-4000}
-      DATA_DIR: /app/data
-      TZ: ${TZ:-Asia/Shanghai}
-    restart: unless-stopped
-EOF
-
-# 设置 Token 并启动
-# AUTH_TOKEN = 管理后台登录令牌（登录时输入此值）
-export AUTH_TOKEN=your-admin-token
-# PROXY_TOKEN = 下游客户端调用 /v1/* 的 Token
-export PROXY_TOKEN=your-proxy-sk-token
-docker compose up -d
+>   症状是「Token verification timed out」这类难查的超时。完整步骤见
+>   [`checkin-backend/README.md`](./checkin-backend/README.md)。
+> - 其余站点的 Go 支持不受影响 —— 你完全可以只用 Banyan 的上游功能。
+> - 界面里部分文案、内部标识（localStorage 键、备份文件名）仍沿用上游的 `metapi`
+>   命名，改动它们会破坏已有用户的配置与备份兼容性，故有意保留。
+> - **托管平台（Render / Zeabur 等）部署不了完整形态**：容器内起不了 xvfb 和真浏览器，
+>   也访问不到你主机上的 `checkin-backend`，因此在那里只能使用非 anyrouter 站点。
+
+## 名字
+
+**Banyan** 是榕树。榕树一棵主干垂下无数气生根，根须各自扎地成干 —— 独木成林。
+这正是这个项目在做的事：一个入口，接住散落在各处的站点。
+
+## 与上游 metapi 的区别
+
+### 为什么要 fork
+
+metapi 对接 anyrouter / agentrouter 时，`login` / `verifyToken` / `checkin` /
+`getBalance` 全都走纯 HTTP。而这两个站前面挂着阿里云 ESA，下发的是
+`aliyun_waf_aa` / `aliyun_waf_bb` 那套**新版 JS 挑战 —— 必须执行页面脚本才能通过**。
+上游 `newApiShield.ts` 里那套 `node:vm` 求解只认老的 `var arg1` + `acw_sc__v2` 形式，
+对新挑战无效。实测症状：
+
+| 症状 | 真实原因 |
+|---|---|
+| 添加账号报 `Token verification timed out (10s)` | `verifyToken` 拿到的是挑战页 HTML，不是 JSON |
+| 添加账号报 `This site is shielded by anti-bot challenge` | `login` 走纯 HTTP POST，过不了挑战 |
+| 签到间歇失败 `Unexpected token '<'` | 同上，响应是挑战页 |
+| 面板上余额一直不动 | `getBalance` 静默失败 |
+
+所以这些方法被改成转发给一个**外部浏览器能力后端**（CloakBrowser 真浏览器 + 代理），
+由它把挑战解掉再请求接口。
+
+### 具体改了什么
+
+核心改动是在 adapter 层做替换，**不改任何调用点** —— 全仓库 6 处调用
+（`checkinService` / `balanceService` / `manualAccountCreationService` /
+`accounts` 路由）因此一次性全部获得真浏览器能力，API 契约与前端一行都不用动。
+
+| # | 改动 | 说明 |
+|---|---|---|
+| 1 | `anyrouter.ts` 重写 5 个方法 | 转发到浏览器后端；`getBalance` 不再吞异常（否则会把 0 当真实余额写库） |
+| 2 | `platformUserId` 不再靠猜 | 上游从用户名末尾抓数字，注册邮箱形式的用户名抓不到 → 401「未提供 New-Api-User」→ 余额恒为 0 |
+| 3 | 自动重登写回 ID | 原本只写回 `accessToken`，重登拿到的新 ID 会丢，下次照样 401 |
+| 4 | 超时放宽 | 真浏览器过挑战单次 12-90 秒是常态，硬编码的 10s/30s 必然超时 |
+| 5 | 调度默认值降频 | 每次调用都真起一个浏览器，高频请求会让出口 IP 被 ESA 拉黑（见下） |
+| 6 | 删除 `pnpm-lock.yaml` | 上游带来的死文件，导致 Dependabot 的 npm 生态任务每次都失败，安全告警 PR 收不到 |
+
+> [!WARNING]
+> **不要调高调度频率。** 2026-09-02 实测：默认的每小时刷余额 + 6 小时签到，
+> 约 60 次/天全部来自同一个出口 IP，结果阿里云 ESA 把该 IP 拉黑，
+> **全站**（含首页）返回 403。降频到每天 2 次余额 + 12 小时间隔后降到约 8 次/天。
+> 签到奖励一天只发一份，刷得再勤也拿不到第二份。
+
+完整的技术细节、架构说明与踩坑记录见 [`LOCAL_FORK.md`](./LOCAL_FORK.md)。
+
+## 架构
+
+```
+你的客户端（OpenAI / Claude 兼容）
+        │  一个 API Key
+        ▼
+┌───────────────────────────────────────────────┐
+│  Banyan（面板 / 连接管理 / 调度 / 路由 / 日志）  │
+│                                               │
+│  NewApiAdapter ──> New API / One API / ...    │
+│  AnyRouterAdapter ──HTTP RPC──┐               │
+└───────────────────────────────┼───────────────┘
+                                ▼
+              checkin-backend（真浏览器 + xvfb + 代理）
+                    127.0.0.1:4100/__checkin/ext/*
+                    └─ 解掉 JS 挑战，再请求站点接口
 ```
 
-<details>
-<summary><strong>一行 Docker 命令</strong></summary>
+后端**故意做成无状态**：调度、连接管理、签到日志、消息推送全部由 Banyan 负责，
+避免两套系统各推一份通知、各记一份日志。
 
-```bash
-docker run -d --name metapi \
-  -p 4000:4000 \
-  -e AUTH_TOKEN=your-admin-token \
-  -e PROXY_TOKEN=your-proxy-sk-token \
-  -e TZ=Asia/Shanghai \
-  -v ./data:/app/data \
-  --restart unless-stopped \
-  1467078763/metapi:latest
-```
+## 功能
 
-</details>
+除上面的浏览器后端外，Banyan 保留 metapi 的全部能力：
 
-启动后访问 `http://localhost:4000`，用 `AUTH_TOKEN` 登录即可。
+- **多站点聚合** — New API / One API / OneHub / DoneHub / Veloera / AnyRouter / Sub2API
+  等，统一成一个 OpenAI / Claude 兼容入口
+- **自动发现模型 + 智能路由** — 按可用性与成本择优
+- **账号与令牌管理** — 多账号、分组、自动重登、余额与额度监控
+- **自动签到** — 定时任务 + 签到日志 + 奖励记录
+- **消息推送** — Webhook / Bark / ServerChan / Telegram 等
+- **代理日志** — 上下游请求追踪，方便排查
+- **自托管** — 数据存本地 SQLite（也支持 MySQL / Postgres），不向第三方发送
+- **桌面应用** — 也可作为 Electron 应用运行
+
+界面与 API 的详细说明请看[上游文档站](https://metapi.cita777.me) —— 注意其内容描述的是
+**上游版本**，不包含本 fork 的 anyrouter 改动。
 
 > [!NOTE]
-> Docker 镜像支持 `amd64`、`arm64` 和 `armv7l`（`linux/arm/v7`）服务端部署。
-> 当前 `armv7l` 支持范围仅限服务端 / Docker 运行，不包含桌面安装包。
+> 本 fork 额外带一个可选的 Telegram 管理机器人（签到推送 + 命令交互 + 代理看门狗），
+> 见 [`checkin-backend/README.md`](./checkin-backend/README.md)。
 
-<!-- markdownlint-disable-next-line MD028 -->
-> [!IMPORTANT]
-> 请务必修改 `AUTH_TOKEN` 和 `PROXY_TOKEN`，不要使用默认值。数据存储在 `./data` 目录，升级不会丢失。
+## 快速开始
 
-> [!TIP]
-> 初始管理员令牌即启动时配置的 `AUTH_TOKEN`。
-> 若在 Compose 外运行且未显式设置 `AUTH_TOKEN`，默认为 `change-me-admin-token`（仅用于本地调试）。
-> 桌面安装包首次启动也属于这类场景：如果你没有额外注入 `AUTH_TOKEN`，默认管理员令牌同样是 `change-me-admin-token`。
-> 如果在「设置」面板中修改了管理员令牌，后续登录请使用新令牌。
+### 只想要上游功能（不用 anyrouter / agentrouter）
 
-Docker Compose、桌面安装包、反向代理、升级与数据库选项等详见 [部署指南](https://metapi.cita777.me/deployment)。
-
-📖 **[环境变量与配置](https://metapi.cita777.me/configuration)** · **[客户端接入指南](https://metapi.cita777.me/client-integration)** · **[常见问题](https://metapi.cita777.me/faq)**
-
----
-
-## 🏗️ 技术栈
-
-| 层                   | 技术                                                              |
-| -------------------- | ----------------------------------------------------------------- |
-| **后端框架**   | [Fastify](https://fastify.dev) — 高性能 Node.js 后端框架            |
-| **前端框架**   | [React 18](https://react.dev) + [Vite](https://vitejs.dev)              |
-| **语言**       | [TypeScript](https://www.typescriptlang.org) — 端到端类型安全       |
-| **样式**       | [Tailwind CSS v4](https://tailwindcss.com) — 原子化样式框架         |
-| **数据库**     | SQLite / MySQL / PostgreSQL +[Drizzle ORM](https://orm.drizzle.team) |
-| **数据可视化** | [VChart](https://visactor.io/vchart) (@visactor/react-vchart)        |
-| **定时任务**   | [node-cron](https://github.com/node-cron/node-cron)                  |
-| **容器化**     | Docker (Debian slim) + Docker Compose                             |
-| **测试**       | [Vitest](https://vitest.dev)                                         |
-
----
-
-## 🛠️ 本地开发
+按上游方式部署即可：
 
 ```bash
-# 安装依赖
-npm install
-
-# 数据库迁移
-npm run db:migrate
-
-# 启动开发环境（前后端热更新）
-npm run dev
+git clone https://github.com/Jacky1n7/banyan.git
+cd banyan
+cp .env.example .env && chmod 600 .env
+# 必须改：AUTH_TOKEN（面板登录）、PROXY_TOKEN（下游调用）
+docker compose -f docker/docker-compose.yml up -d --build
 ```
+
+或直接 `npm ci && npm run build && npm start`（需要 Node.js 22.15+）。
+
+### 要用 anyrouter / agentrouter（需要浏览器后端）
+
+多一步：按 [`checkin-backend/README.md`](./checkin-backend/README.md) 部署浏览器后端，
+然后在 Banyan 的 compose 里接上：
+
+```yaml
+services:
+  banyan:
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      EXT_WAF_URL: http://host.docker.internal:4100/__checkin/ext
+      EXT_WAF_TIMEOUT_MS: "240000"
+```
+
+加账号时**站点的 `platform` 必须填 `anyrouter`**（agentrouter 也填这个，
+adapter 按 URL 分辨具体是哪个站）。
+
+### 升级
+
+本 fork 用 `local-fork` 分支维护，**不要依赖上游的更新中心** ——
+它的版本检查与默认镜像都指向上游，跟着更新会把 fork 的改动覆盖掉
+（见「已知限制」）。
 
 ```bash
-npm run build          # 构建前端 + 后端
-npm run build:web      # 仅构建前端（Vite）
-npm run build:server   # 仅构建后端（TypeScript）
-npm run dist:desktop:mac:intel # 构建 mac Intel (x64) 桌面安装包
-npm test               # 运行全部测试
-npm run test:watch     # 监听模式
-npm run db:generate    # 生成 Drizzle 迁移文件
+git pull && docker compose -f docker/docker-compose.yml up -d --build
 ```
 
----
+## 常见问题
 
-## 🔗 相关项目
+**Q：不用 anyrouter，这个 fork 和上游有区别吗？**
+基本没有，除了调度默认值更保守、修了几个上游的 ID 解析 bug、CI 能正常跑。
+你可以只把它当"修过 bug 的 metapi"用。
 
-### 上游兼容平台
+**Q：为什么必须单独部署浏览器后端？**
+因为过 WAF 挑战需要真浏览器执行 JS。它依赖
+[millylee/anyrouter-check-in](https://github.com/millylee/anyrouter-check-in) 的
+登录与 cookie 获取逻辑，所以那些文件必须放在该项目的 clone 目录里运行。
 
-| 项目                                            | 说明                                    |
-| ----------------------------------------------- | --------------------------------------- |
-| [New API](https://github.com/QuantumNous/new-api)  | 新一代大模型网关，Metapi 的主要上游之一 |
-| [One API](https://github.com/songquanpeng/one-api) | 经典 OpenAI 接口聚合管理                |
-| [OneHub](https://github.com/MartialBE/one-hub)     | One API 增强分支                        |
-| [DoneHub](https://github.com/deanxv/done-hub)      | OneHub 增强分支                         |
-| [Veloera](https://github.com/Veloera/Veloera)      | API 网关平台                            |
+**Q：我的出口 IP 被拉黑了（全站 403，`via` 头带 `403102`）怎么办？**
+换出口节点。这是 IP 级封禁，不是指纹问题 —— 实测同一时刻家用宽带能正常拿到挑战页，
+而被拉黑的服务器两条出口都是硬 403。恢复后**不要调高调度频率**。
 
-### 参考和使用的项目
+**Q：更新中心提示有新版，能点吗？**
+不要。更新中心的版本检查和默认镜像目前指向上游仓库，跟着更新会覆盖掉本 fork 的改动。
+这是已知限制，见下。
 
-| 项目                                                 | 说明                                                      |
-| ---------------------------------------------------- | --------------------------------------------------------- |
-| [All API Hub](https://github.com/qixing-jk/all-api-hub) | 浏览器扩展版 — 一站式管理中转站账号，Metapi 最初灵感来源 |
-| [LLM Metadata](https://github.com/nicepkg/llm-metadata) | LLM 模型元数据库，用于模型描述参考                        |
-| [New API](https://github.com/QuantumNous/new-api)       | 平台适配器参考实现                                        |
+## 已知限制
 
----
+- **更新中心指向上游** — `updateCenterVersionService.ts` 检查的是上游 releases，
+  `updateCenterConfigService.ts` 默认拉 `1467078763/metapi` 镜像。想用更新中心的话，
+  需要在设置里改成你自己的镜像仓库。
+- **托管平台只能跑简化形态** — 见顶部提示。
+- **`platform` 只认 `anyrouter`** — 填 `new-api` 会掉回纯 HTTP 实现，anyrouter 相关功能失效。
+- **界面存在上游残留命名** — 部分描述文案与内部标识仍是 `metapi`，属有意保留（见顶部提示）。
+- **文档站内容来自上游** — 不含本 fork 的 anyrouter 改动说明，那部分看 `LOCAL_FORK.md`。
 
-## 🔒 数据与隐私
+## 许可
 
-Metapi 完全自托管，所有数据（账号、令牌、路由、日志）均存储在你自己的部署环境中，不会向任何第三方发送数据。代理请求仅在你的服务器与上游站点之间直连传输。
+[MIT](./LICENSE) —— 与上游一致。
 
----
-
-## 🤝 贡献
-
-欢迎各种形式的贡献！
-
-- 🐛 报告 Bug — [提交 Issue](https://github.com/cita-777/metapi/issues)
-- 💡 功能建议 — [发起讨论](https://github.com/cita-777/metapi/issues)
-- 🔧 代码贡献 — [提交 Pull Request](https://github.com/cita-777/metapi/pulls)
-- 📝 贡献指南 — [CONTRIBUTING.md](CONTRIBUTING.md)
-- 📜 行为准则 — [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)
-
----
-
-## 🛡️ 安全
-
-如发现安全问题，请参考 [SECURITY.md](SECURITY.md) 使用非公开方式报告。
-
----
-
-## 📜 License
-
-[MIT](LICENSE)
-
----
-
-## 🙏 致谢
-
-感谢所有为 Metapi 提交代码、反馈问题、提供思路和实测数据的朋友。这个项目的很多能力，都是在社区的真实使用和反复打磨中慢慢长出来的。
-
-特别感谢所有贡献者：
-
-<a href="https://github.com/cita-777/metapi/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=cita-777/metapi" alt="Contributors" />
-</a>
-
----
-
-## ⭐ Star History
-
-[![Star History Chart](https://api.star-history.com/svg?repos=cita-777/metapi&type=date&legend=top-left&v=2)](https://www.star-history.com/#cita-777/metapi&type=date&legend=top-left)
+本项目是 [cita-777/metapi](https://github.com/cita-777/metapi) 的 fork，
+浏览器后端依赖 [millylee/anyrouter-check-in](https://github.com/millylee/anyrouter-check-in)
+与 [CloakBrowser](https://pypi.org/project/cloakbrowser/)。感谢上游作者与贡献者。
 
 ---
 
 <div align="center">
-
-**⭐ 如果 Metapi 对你有帮助，给个 Star 就是最大的支持！**
-
-`<sub>`Built with ❤️ by the AI community`</sub>`
-
+<sub>使用前请自行确认目标站点的服务条款。自动签到与绕过反爬可能违反站点规定，风险自负。</sub>
 </div>
