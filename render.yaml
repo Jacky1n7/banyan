@@ -1,8 +1,12 @@
+# 警告：本 fork 的 anyrouter 支持依赖一个跑在宿主机上的真浏览器后端
+# （checkin-backend/）。托管平台起不了 xvfb 和真浏览器，也访问不到你主机上的
+# 那个后端，所以这份 blueprint 部署出来的实例只能用于非 anyrouter 站点。
+# 详见 README 顶部说明。
 services:
   - type: web
     name: metapi
     runtime: docker
-    repo: https://github.com/cita-777/metapi
+    repo: https://github.com/Jacky1n7/metapi-fork
     dockerfilePath: ./docker/Dockerfile
     dockerContext: .
     plan: free

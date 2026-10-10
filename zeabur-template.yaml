@@ -1,11 +1,15 @@
+# 警告：本模板是上游的形态，与本质 fork 无关，且不包含本 fork 的任何改动 ——
+# `image` 指向的是上游作者发布的镜像 `1467078763/metapi:latest`，而本 fork 的
+# anyrouter 支持需要额外部署 checkin-backend/，容器内起不了 xvfb 和真浏览器。
+# 想用本 fork 的 WAF 绕过能力，请按 README / LOCAL_FORK.md 自行构建镜像。
 apiVersion: zeabur.com/v1
 kind: Template
 metadata:
   name: Metapi
 spec:
   description: Meta-layer management and unified proxy for AI API aggregation platforms.
-  icon: https://raw.githubusercontent.com/cita-777/metapi/main/docs/logos/logo-icon-512.png
-  coverImage: https://raw.githubusercontent.com/cita-777/metapi/main/docs/logos/logo-banner.png
+  icon: https://raw.githubusercontent.com/Jacky1n7/metapi-fork/local-fork/docs/logos/logo-icon-512.png
+  coverImage: https://raw.githubusercontent.com/Jacky1n7/metapi-fork/local-fork/docs/logos/logo-banner.png
   tags:
     - AI
     - Tool
@@ -42,7 +46,7 @@ spec:
       description: Internal HTTP port (default 4000).
   services:
     - name: metapi
-      icon: https://raw.githubusercontent.com/cita-777/metapi/main/docs/logos/logo-icon-512.png
+      icon: https://raw.githubusercontent.com/Jacky1n7/metapi-fork/local-fork/docs/logos/logo-icon-512.png
       template: PREBUILT
       spec:
         source:
