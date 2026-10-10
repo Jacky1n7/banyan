@@ -43,13 +43,11 @@ import urllib.request
 from datetime import datetime, timezone
 from pathlib import Path
 
-CHECKIN_DIR = Path('/opt/anyrouter-check-in')
-METAPI_ENV = Path('/opt/metapi/.env')
-METAPI_DB = Path('/opt/metapi/data/hub.db')
+from paths import CHECKIN_DIR, METAPI_DB, METAPI_ENV, bootstrap
+
 METAPI_BASE = 'http://127.0.0.1:4000'
 
-sys.path.insert(0, str(CHECKIN_DIR))
-os.chdir(CHECKIN_DIR)
+bootstrap()
 
 from dotenv import load_dotenv  # noqa: E402
 

@@ -26,3 +26,13 @@ docker/.env
 docs/plan/
 docs/plans/
 .ace-tool/
+
+# Python（checkin-backend 配套后端；它平时跑在上游 clone 目录里，
+# 这里只是源码副本，但本地调试也会产生这些产物）
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/

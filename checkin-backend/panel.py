@@ -33,9 +33,9 @@ import urllib.request
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 
-CHECKIN_DIR = Path('/opt/anyrouter-check-in')
-sys.path.insert(0, str(CHECKIN_DIR))
-os.chdir(CHECKIN_DIR)
+from paths import CHECKIN_DIR, bootstrap, uv_bin, uv_env
+
+bootstrap()
 
 import metapi_bridge as mb  # noqa: E402
 
@@ -122,8 +122,7 @@ def start_job(key: str, argv: list[str], log: Path, env_extra: dict | None = Non
 		old = _jobs.get(key)
 		if old and old.poll() is None:
 			return {'ok': False, 'message': '该任务正在运行中'}
-		env = {**os.environ, 'PATH': '/root/.local/bin:' + os.environ.get('PATH', ''),
-			   'PYTHONUNBUFFERED': '1', 'PYTHONIOENCODING': 'utf-8'}
+		env = {**uv_env(), 'PYTHONUNBUFFERED': '1', 'PYTHONIOENCODING': 'utf-8'}
 		if env_extra:
 			env.update(env_extra)
 		fh = log.open('w', encoding='utf-8')
@@ -388,7 +387,7 @@ class Handler(BaseHTTPRequestHandler):
 			# 有头 Chromium 需要 X 显示：新版阿里云 WAF 挑战（aliyun_waf_aa/bb）
 			# 必须执行 JS 才能过，纯 HTTP 过不去
 			argv = ['xvfb-run', '-a', '--server-args=-screen 0 1440x900x24',
-					'/root/.local/bin/uv', 'run', '--with', 'cryptography', 'python',
+					uv_bin(), 'run', '--with', 'cryptography', 'python',
 					'import_session.py', '--site-id', str(site_id),
 					'--session-file', str(SESSION_INPUT)]
 			if payload.get('api_user'):

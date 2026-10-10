@@ -39,17 +39,16 @@ import urllib.parse
 import urllib.request
 from pathlib import Path
 
-CHECKIN_DIR = Path('/opt/anyrouter-check-in')
-sys.path.insert(0, str(CHECKIN_DIR))
-os.chdir(CHECKIN_DIR)
+from paths import (CHECKIN_DIR, METAPI_DB, METAPI_ENV, MIHOMO_CONFIG,
+					SUB_UPDATER, bootstrap, uv_bin, uv_env)
+
+bootstrap()
 
 import tg_fmt as F  # noqa: E402
 
-METAPI_ENV = Path('/opt/metapi/.env')
-METAPI_DB = Path('/opt/metapi/data/hub.db')
 METAPI_BASE = 'http://127.0.0.1:4000'
 MIHOMO_API = 'http://127.0.0.1:9090'
-STATE_FILE = Path('/opt/anyrouter-check-in/.tg_bot_state.json')
+STATE_FILE = CHECKIN_DIR / '.tg_bot_state.json'
 
 
 def read_env(path: Path, key: str) -> str | None:
@@ -851,11 +850,11 @@ def handle_cred_input(chat_id, text: str, msg: dict) -> bool:
 	try:
 		proc = subprocess.run(
 			['xvfb-run', '-a', '--server-args=-screen 0 1440x900x24',
-			 '/root/.local/bin/uv', 'run', '--with', 'cryptography', 'python',
+			 uv_bin(), 'run', '--with', 'cryptography', 'python',
 			 'import_session.py', '--site-id', str(site['id']),
 			 '--session-file', str(tmp), '--api-user', str(api_user)],
 			cwd=str(CHECKIN_DIR), capture_output=True, text=True, timeout=600,
-			env={**os.environ, 'PATH': '/root/.local/bin:' + os.environ.get('PATH', '')})
+			env=uv_env())
 		tail = [l for l in (proc.stdout + proc.stderr).splitlines()
 				if l.startswith(('[SUCCESS]', '[DONE]', '[FAILED]', '[WARN]', '[HINT]'))]
 	except Exception as exc:
@@ -964,7 +963,6 @@ def push_loop():
 # ------------------------------------------------------------------ 代理看门狗
 
 
-MIHOMO_CONFIG = Path('/opt/mihomo/config.yaml')
 PROXY_PROBE_TARGETS = ('https://anyrouter.top/login', 'https://agentrouter.org/login')
 WATCHDOG_INTERVAL = 300      # 5 分钟探一次
 WATCHDOG_THRESHOLD = 3       # 连续 3 次（约 15 分钟）失败才动手
@@ -1039,9 +1037,6 @@ def resolves(host: str) -> str | None:
 		return socket.getaddrinfo(host, None, socket.AF_INET)[0][4][0]
 	except Exception:
 		return None
-
-
-SUB_UPDATER = Path('/opt/mihomo/update_sub.py')
 
 
 def try_subscription_repair() -> tuple[bool, str]:
@@ -1120,7 +1115,7 @@ def diagnose_proxy_failure() -> str:
 		for host, ip in found:
 			lines.append(f'   · <code>{F.esc(host)}</code> → <code>{F.esc(ip)}</code>')
 		lines.append('')
-		lines.append('确认端口通了之后，改 /opt/mihomo/config.yaml 里的 server 再重启 mihomo。')
+		lines.append(f'确认端口通了之后，改 {MIHOMO_CONFIG} 里的 server 再重启 mihomo。')
 	else:
 		lines.append('')
 		lines.append('没探到可用的相邻域名，需要去机场后台拿新订阅。')

@@ -1,0 +1,17 @@
+# 配套后端的 Python 依赖 = 上游依赖 + cryptography
+#
+# 用 uv 不需要本文件：上游 pyproject.toml 已声明前三个，cryptography 由启动脚本用
+# `uv run --with cryptography` 叠加（见 run_panel.sh 里的注释解释为什么不能 uv add）。
+#
+# 用 pip / venv 的话：
+#   python -m venv .venv && . .venv/bin/activate
+#   pip install -r requirements.txt
+#   python -m cloakbrowser install      # 装 CloakBrowser 浏览器，必须做
+#
+# cryptography 用于解密 metapi 存的账号密码（metapi_bridge.py / add_account.py /
+# import_session.py 都要）。只跑 panel.py 的导入任务也需要它。
+
+httpx[http2]>=0.24.0
+cloakbrowser>=0.3.0
+python-dotenv>=1.0.0
+cryptography>=42.0.0

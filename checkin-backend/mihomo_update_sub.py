@@ -28,12 +28,11 @@ import shutil
 import subprocess
 import sys
 import urllib.request
-from pathlib import Path
 
 import yaml
 
-MIHOMO_DIR = Path('/opt/mihomo')
-CONFIG = MIHOMO_DIR / 'config.yaml'
+from paths import MIHOMO_CONFIG as CONFIG, MIHOMO_DIR
+
 SUB_URL_FILE = MIHOMO_DIR / '.sub_url'
 UA = 'clash-verge/v2.0.0'
 KEEP_KEYS = ('name', 'type', 'server', 'port', 'password', 'sni', 'udp',

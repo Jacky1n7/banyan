@@ -22,11 +22,10 @@ import os
 import sqlite3
 import sys
 from datetime import datetime, timezone
-from pathlib import Path
 
-CHECKIN_DIR = Path('/opt/anyrouter-check-in')
-sys.path.insert(0, str(CHECKIN_DIR))
-os.chdir(CHECKIN_DIR)
+from paths import CHECKIN_DIR, bootstrap
+
+bootstrap()
 
 from dotenv import load_dotenv  # noqa: E402
 

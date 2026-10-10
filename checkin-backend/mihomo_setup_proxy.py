@@ -23,8 +23,8 @@ import sys
 import urllib.parse
 from pathlib import Path
 
-MIHOMO_DIR = Path('/opt/mihomo')
-CONFIG = MIHOMO_DIR / 'config.yaml'
+from paths import MIHOMO_CONFIG as CONFIG
+from paths import MIHOMO_DIR
 
 
 def b64pad(raw: str) -> bytes:

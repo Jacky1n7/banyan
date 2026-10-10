@@ -21,11 +21,10 @@ from __future__ import annotations
 import asyncio
 import json
 import os
-import sys
-from pathlib import Path
 
-CHECKIN_DIR = Path('/opt/anyrouter-check-in')
-sys.path.insert(0, str(CHECKIN_DIR))
+from paths import CHECKIN_DIR, ensure_importable
+
+ensure_importable()
 
 from dotenv import load_dotenv  # noqa: E402
 
