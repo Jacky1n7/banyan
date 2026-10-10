@@ -69,8 +69,8 @@ cd ~/anyrouter-check-in
 git rev-parse HEAD          # 记下来，本 fork 的适配基线
 
 # 把本目录的文件复制进去（任意方式：cp / rsync / 直接从本仓库 checkout 后拷贝）
-cp /path/to/metapi-fork/checkin-backend/*.py .
-cp /path/to/metapi-fork/checkin-backend/*.sh .
+cp /path/to/banyan/checkin-backend/*.py .
+cp /path/to/banyan/checkin-backend/*.sh .
 chmod +x *.sh
 ```
 

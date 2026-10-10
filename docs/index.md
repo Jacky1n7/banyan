@@ -2,12 +2,12 @@
 layout: home
 
 hero:
-  name: "Metapi 文档中心"
+  name: "Banyan 文档中心"
   text: "中转站的中转站"
   tagline: "将分散的 AI 中转站聚合为一个统一网关"
   image:
-    src: /logos/logo-full.png
-    alt: Metapi
+    src: /logos/banyan-icon-512.png
+    alt: Banyan
   actions:
     - theme: brand
       text: 10 分钟快速上手

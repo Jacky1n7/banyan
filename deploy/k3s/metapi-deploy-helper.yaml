@@ -45,7 +45,7 @@ spec:
       serviceAccountName: metapi-deploy-helper
       containers:
         - name: helper
-          image: 1467078763/metapi:latest
+          image: 1467078763/metapi:latest # 上游镜像：Banyan 不发布镜像，请改成你自己的
           imagePullPolicy: Always
           command: ["/bin/sh", "-lc"]
           args:

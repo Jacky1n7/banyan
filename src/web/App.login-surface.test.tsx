@@ -15,8 +15,8 @@ describe('Login surface', () => {
     expect(SITE_DOCS_URL).toBe('https://metapi.cita777.me');
   });
 
-  it('uses the author github profile for the login github shortcut', () => {
-    expect(SITE_GITHUB_URL).toBe('https://github.com/cita-777');
+  it('uses the fork repository for the login github shortcut', () => {
+    expect(SITE_GITHUB_URL).toBe('https://github.com/Jacky1n7/banyan');
   });
 
   it('renders a poster-style hero with a floating admin login panel', () => {

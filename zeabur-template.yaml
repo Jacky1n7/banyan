@@ -5,19 +5,19 @@
 apiVersion: zeabur.com/v1
 kind: Template
 metadata:
-  name: Metapi
+  name: Banyan
 spec:
-  description: Meta-layer management and unified proxy for AI API aggregation platforms.
-  icon: https://raw.githubusercontent.com/Jacky1n7/metapi-fork/local-fork/docs/logos/logo-icon-512.png
-  coverImage: https://raw.githubusercontent.com/Jacky1n7/metapi-fork/local-fork/docs/logos/logo-banner.png
+  description: "Banyan（metapi 的 fork）：把散落在各 AI 中转站的额度聚成一个入口。注意：此模板部署的是上游镜像，不含浏览器后端改动。"
+  icon: https://raw.githubusercontent.com/Jacky1n7/banyan/local-fork/docs/logos/banyan-icon-512.png
+  coverImage: https://raw.githubusercontent.com/Jacky1n7/banyan/local-fork/docs/logos/banyan-banner.png
   tags:
     - AI
     - Tool
     - Proxy
   readme: |-
-    # Metapi (Zeabur Template)
+    # Banyan (Zeabur Template)
 
-    Metapi is an AI API aggregation proxy with token routing, account management, monitoring, and admin dashboard.
+    Banyan (a fork of metapi) is an AI API aggregation proxy with token routing, account management, monitoring, and admin dashboard.
 
     ## Required Variables
 
@@ -46,7 +46,7 @@ spec:
       description: Internal HTTP port (default 4000).
   services:
     - name: metapi
-      icon: https://raw.githubusercontent.com/Jacky1n7/metapi-fork/local-fork/docs/logos/logo-icon-512.png
+      icon: https://raw.githubusercontent.com/Jacky1n7/banyan/local-fork/docs/logos/banyan-icon-512.png
       template: PREBUILT
       spec:
         source:
@@ -82,7 +82,7 @@ spec:
             default: production
 localization:
   zh-CN:
-    description: Metapi 是一个 AI 中转聚合代理，提供路由、监控和管理后台。
+    description: Banyan（metapi 的 fork）是一个 AI 中转聚合代理，提供路由、监控和管理后台。
     variables:
       - key: AUTH_TOKEN
         name: 管理员令牌
@@ -97,7 +97,7 @@ localization:
         name: 服务端口
         description: 内部监听端口（默认 4000）。
     readme: |-
-      # Metapi (Zeabur 模板)
+      # Banyan (Zeabur 模板)
 
       Metapi 是一个 AI 中转聚合代理，支持 Token 路由、账号管理、监控和管理后台。
 

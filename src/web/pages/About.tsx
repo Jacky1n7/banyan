@@ -30,7 +30,6 @@ const TECH_STACK = [
 
 const LINKS = [
   { label: 'GitHub', href: 'https://github.com/Jacky1n7/banyan', icon: '📂' },
-  { label: 'Docker Hub', href: 'https://hub.docker.com/r/1467078763/metapi', icon: '🐳' },
   { label: '站点文档', href: SITE_DOCS_URL, icon: '📚' },
 ];
 

@@ -47,9 +47,8 @@
 
 ## Zeabur 一键部署
 
-<a href="https://zeabur.com/templates/DOX5PR">
-  <img alt="Deploy on Zeabur" src="https://zeabur.com/button.svg" height="28">
-</a>
+> 本 fork 没有发布 Zeabur 模板。上游模板 `DOX5PR` 部署的是上游镜像 `1467078763/metapi`，不含本 fork 的改动；
+> 需要在 Zeabur 使用时，请用仓库里的 `zeabur-template.yaml` 自行导入，并把镜像换成你自己构建推送的。
 
 点击按钮即可一键部署到 [Zeabur](https://zeabur.com)，无需手动配置 Docker 或服务器。
 
@@ -75,7 +74,7 @@
 
 ## Render 一键部署（免费 24h 运行）
 
-<a href="https://render.com/deploy?repo=https://github.com/cita-777/metapi">
+<a href="https://render.com/deploy?repo=https://github.com/Jacky1n7/banyan">
   <img alt="Deploy to Render" src="https://render.com/images/deploy-to-render-button.svg" height="28">
 </a>
 
@@ -120,7 +119,7 @@
 **方式二：手动创建**
 
 1. 在 [Render Dashboard](https://dashboard.render.com) 点击 **New → Web Service**
-2. 连接你的 GitHub 仓库（或使用公开仓库地址 `https://github.com/cita-777/metapi`）
+2. 连接你的 GitHub 仓库（或使用公开仓库地址 `https://github.com/Jacky1n7/banyan`）
 3. 配置：
    - **Environment**: Docker
    - **Dockerfile Path**: `./docker/Dockerfile`

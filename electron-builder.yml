@@ -1,5 +1,5 @@
-appId: me.cita777.metapi.desktop
-productName: Metapi
+appId: io.github.jacky1n7.banyan.desktop
+productName: Banyan
 artifactName: ${name}-${version}-${os}-${arch}.${ext}
 directories:
   output: release
@@ -27,11 +27,11 @@ linux:
     - AppImage
     - deb
     - rpm
-  maintainer: cita-777 <cita-777@users.noreply.github.com>
+  maintainer: Jacky1n7 <146931635+Jacky1n7@users.noreply.github.com>
 publish:
   provider: github
-  owner: cita-777
-  repo: metapi
+  owner: Jacky1n7
+  repo: banyan
   releaseType: release
   publishAutoUpdate: true
 nsis:

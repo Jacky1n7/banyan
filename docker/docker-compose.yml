@@ -1,6 +1,11 @@
 services:
   metapi:
-    image: 1467078763/metapi:latest
+    # 本 fork 不发布镜像：从本仓库源码构建
+    #   docker compose -f docker/docker-compose.yml up -d --build
+    image: banyan:local
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
     ports:
       - "127.0.0.1:4000:4000"
     volumes:

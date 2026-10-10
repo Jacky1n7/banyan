@@ -1,7 +1,7 @@
 {
-  "name": "metapi",
+  "name": "banyan",
   "version": "1.3.0",
-  "description": "Meta-layer management and unified proxy for AI API aggregation platforms",
+  "description": "Banyan — one endpoint for scattered AI relay sites (a fork of metapi with a real-browser backend for WAF challenges)",
   "main": "dist/desktop/main.js",
   "keywords": [
     "ai",
@@ -12,13 +12,13 @@
     "claude",
     "aggregator"
   ],
-  "homepage": "https://github.com/cita-777/metapi#readme",
+  "homepage": "https://github.com/Jacky1n7/banyan#readme",
   "bugs": {
-    "url": "https://github.com/cita-777/metapi/issues"
+    "url": "https://github.com/Jacky1n7/banyan/issues"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/cita-777/metapi.git"
+    "url": "git+https://github.com/Jacky1n7/banyan.git"
   },
   "license": "MIT",
   "engines": {
@@ -130,8 +130,8 @@
     "minimist": "^1.2.8"
   },
   "author": {
-    "name": "cita-777",
-    "email": "cita-777@users.noreply.github.com",
-    "url": "https://github.com/cita-777"
+    "name": "Jacky1n7",
+    "email": "146931635+Jacky1n7@users.noreply.github.com",
+    "url": "https://github.com/Jacky1n7"
   }
 }

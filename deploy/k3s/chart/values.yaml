@@ -1,6 +1,7 @@
 replicaCount: 1
 
 image:
+  # 上游镜像。Banyan 不发布镜像：部署前改成你自己构建推送的仓库，否则跑的是上游 metapi
   repository: 1467078763/metapi
   tag: latest
   digest: ""

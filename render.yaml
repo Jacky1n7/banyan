@@ -4,9 +4,9 @@
 # 详见 README 顶部说明。
 services:
   - type: web
-    name: metapi
+    name: banyan
     runtime: docker
-    repo: https://github.com/Jacky1n7/metapi-fork
+    repo: https://github.com/Jacky1n7/banyan
     dockerfilePath: ./docker/Dockerfile
     dockerContext: .
     plan: free
