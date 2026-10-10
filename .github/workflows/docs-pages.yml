@@ -2,7 +2,7 @@ name: Docs Pages
 
 on:
   push:
-    branches: [main]
+    branches: [main, local-fork]
     paths:
       - 'docs/**'
       - '.github/workflows/docs-pages.yml'

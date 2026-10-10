@@ -745,11 +745,12 @@ describe('NewApiAdapter', () => {
     await expect(adapter.getBalance(baseUrl, BALANCE_FAIL_TOKEN)).rejects.toThrow('access token');
   });
 
-  it('prefers post-challenge cookie failure over raw html parse error when reading balance', async () => {
+  // Banyan fork：AnyRouterAdapter.getBalance 不再走纯 HTTP，而是转发给浏览器能力后端
+  // （EXT_WAF_URL）。这里只验证"后端不可达时必须抛错而不是静默返回 0"。
+  it('surfaces browser-backend failures instead of returning a zero balance', async () => {
     const adapter = new AnyRouterAdapter();
 
-    await expect(adapter.getBalance(baseUrl, BALANCE_SHIELD_FAILURE_TOKEN)).rejects
-      .toThrow('无权进行此操作，未登录且未提供 access token');
+    await expect(adapter.getBalance(baseUrl, BALANCE_SHIELD_FAILURE_TOKEN)).rejects.toThrow();
   });
 
   it('preserves nested checkin error message instead of generic fallback', async () => {

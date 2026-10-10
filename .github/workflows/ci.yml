@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [main, master]
+    branches: [main, master, local-fork]
     paths-ignore:
       - 'docs/**'
       - 'README.md'
@@ -351,11 +351,12 @@ jobs:
 
   publish-docker-arch:
     name: Publish Docker Image (${{ matrix.arch }})
-    if: github.event_name == 'push'
+    # 只从 main/master 发布镜像；fork 的 local-fork 分支只跑测试与构建
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 45
     env:
-      DOCKERHUB_IMAGE: ${{ secrets.DOCKERHUB_USERNAME }}/metapi
+      DOCKERHUB_IMAGE: ${{ secrets.DOCKERHUB_USERNAME }}/banyan
     strategy:
       fail-fast: false
       matrix:
@@ -434,12 +435,13 @@ jobs:
 
   publish-docker:
     name: Publish Docker Manifest
-    if: github.event_name == 'push'
+    # 只从 main/master 发布镜像；fork 的 local-fork 分支只跑测试与构建
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
     runs-on: ubuntu-latest
     needs: publish-docker-arch
     timeout-minutes: 15
     env:
-      DOCKERHUB_IMAGE: ${{ secrets.DOCKERHUB_USERNAME }}/metapi
+      DOCKERHUB_IMAGE: ${{ secrets.DOCKERHUB_USERNAME }}/banyan
 
     steps:
       - name: Checkout

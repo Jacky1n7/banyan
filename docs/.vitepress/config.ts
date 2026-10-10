@@ -44,12 +44,14 @@ if (!sanitizeUrlSourceEntry) {
 export default withMermaid(
   defineConfig({
     lang: 'zh-CN',
+    // GitHub Pages 项目站点：https://jacky1n7.github.io/banyan/
+    base: '/banyan/',
     title: 'Banyan 文档',
     description: 'Banyan 使用文档、FAQ 与维护协作指南',
     head: [
-      ['link', { rel: 'icon', type: 'image/png', sizes: '32x32', href: '/favicon.png' }],
-      ['link', { rel: 'icon', type: 'image/png', sizes: '64x64', href: '/favicon-64.png' }],
-      ['link', { rel: 'shortcut icon', href: '/favicon.ico' }],
+      ['link', { rel: 'icon', type: 'image/png', sizes: '32x32', href: '/banyan/favicon.png' }],
+      ['link', { rel: 'icon', type: 'image/png', sizes: '64x64', href: '/banyan/favicon-64.png' }],
+      ['link', { rel: 'shortcut icon', href: '/banyan/favicon.ico' }],
     ],
     cleanUrls: true,
     lastUpdated: true,
