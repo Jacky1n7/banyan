@@ -119,7 +119,7 @@
     "sharp": "^0.34.5",
     "tailwindcss": "^4.0.0",
     "tsx": "^4.23.15",
-    "typescript": "^6.0.3",
+    "typescript": "^7.0.2",
     "vite": "^6.4.4",
     "vitepress": "^1.6.4",
     "vitepress-plugin-mermaid": "^2.0.17",
